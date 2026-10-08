@@ -6,6 +6,4 @@ soundfile
 scikit-learn
 matplotlib
 seaborn
-tensorflow
-jupyter
 tqdm

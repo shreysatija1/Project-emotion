@@ -1,6 +1,6 @@
 # Speech Emotion Recognition (SER) Paper Reproduction
 
-Reproducing the paper:  
+Reproducing the research paper:  
 **"Data augmentation using a 1D-CNN model with MFCC/MFMC features for speech emotion recognition"**  
 *Automatika: Journal for Control, Measurement, Electronics, Computing and Communications* (2024).  
 Authors: Thomas Mary Little Flower, Thirasama Jaya, and Sreedharan Christopher Ezhil Singh.  
@@ -10,22 +10,13 @@ DOI: [10.1080/00051144.2024.2371249](https://doi.org/10.1080/00051144.2024.23712
 
 ## Project Goal
 
-The primary goal of this 2-week effort is to reproduce the methodology and empirical findings of the paper, starting with the **Emo-DB** (Berlin Database of Emotional Speech) benchmark:
-1. Re-implement feature extraction pipelines for:
-   - **MFCC** (Mel-Frequency Cepstral Coefficients)
-   - **MFMC** (Mel-Frequency Magnitude Coefficients) with magnitude spectrum log-filterbank weighting and no DCT.
-2. Implement the Gaussian noise data augmentation pipeline (5x dataset size: original, zero-noise permuted, and $\sigma \in \{0.01, 0.025, 0.05\}$ noise levels).
-3. Build and train the 4-layer 1D-CNN classifier under two split protocols (evaluating potential data leakage in augmentation vs. strict train-only augmentation).
-4. Benchmark target accuracies on Emo-DB:
-   - MFCC without augmentation: ~85.0%
-   - MFMC without augmentation: 86.9%
-   - MFMC with augmentation: 97.2% – 97.5%
+The goal of this reproduction project is to reproduce and rigorously validate the findings of the 2024 Automatika paper on the **Emo-DB** (Berlin Database of Emotional Speech, 535 German utterances across 7 emotions). The study compares **MFCC** (Mel-Frequency Cepstral Coefficients) and **MFMC** (Mel-Frequency Magnitude Coefficients) with and without Gaussian noise data augmentation using a 1D Convolutional Neural Network.
 
 ---
 
 ## Environment Setup
 
-The project uses Python 3.11 with virtual environment isolated in `.venv`.
+The project uses Python 3.11 with an isolated virtual environment (`.venv`).
 
 ### Activate the Virtual Environment
 
@@ -47,24 +38,27 @@ source .venv/bin/activate
 ### Install Dependencies
 
 ```bash
-pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ---
 
-## Running the Smoke Test
+## Reproduce the Week 1 Pipeline
 
-To verify that all required audio, signal processing, and machine learning libraries are functional and that a basic Keras Conv1D training step executes cleanly:
+To run the entire end-to-end data processing, feature extraction, sanity baselines, visualization, and validation pipeline in one step:
 
 ```bash
-python src/check_env.py
+python src/run_all.py
 ```
 
-Expected output ends with:
-```
-ENVIRONMENT OK
-```
+This single command automatically executes:
+1. `src/data.py`: Loads 535 `.wav` files at 16 kHz mono and generates `data/processed/metadata.csv`.
+2. `src/make_splits.py`: Creates stratified 60/20/20 train/val/test splits (`data/processed/splits.csv`).
+3. `src/features_mfcc.py`: Extracts 12, 24, and 30 coefficient MFCC features and saves them to `features/`.
+4. `src/features_mfmc.py`: Extracts 12, 24, and 30 coefficient MFMC features and saves them to `features/`.
+5. `src/sanity.py`: Trains SVM and Logistic Regression classifiers to verify signal quality.
+6. `src/plots.py`: Plots class distribution and MFCC vs. MFMC spectrograms in `results/`.
+7. `src/verify.py`: Runs assertion checks ensuring no split overlap, valid shapes, and feature consistency.
 
 ---
 
@@ -73,33 +67,39 @@ ENVIRONMENT OK
 ```
 ser-repro/
 ├── data/
-│   ├── raw/             # Raw speech audio datasets (e.g., Emo-DB WAV files)
-│   └── processed/       # Preprocessed audio waveforms or train/val/test splits
-├── features/            # Cached extracted feature arrays (.npy)
-├── src/                 # Python source code modules
-│   ├── check_env.py     # Environment verification and smoke test
-│   ├── config.py        # Central hyperparameters, paths, and mappings
-│   └── data.py          # Audio loading and metadata generation
-├── notebooks/           # Jupyter exploratory notebooks
-├── results/             # Evaluation metrics, confusion matrices, logs, and plots
-├── docs/                # Documentation, paper PDF, and specification sheets
-│   ├── paper.pdf        # Paper publication PDF
-│   └── spec_sheet.md    # Known settings, assumptions, and unclear parameters
-├── .gitignore           # Git ignore rules for virtual environment, data, and caches
-├── README.md            # Project overview, setup, and progress log
-└── requirements.txt     # Python project dependencies
+│   ├── raw/
+│   │   └── emodb/           # 535 raw EmoDB .wav audio files
+│   └── processed/           # metadata.csv and splits.csv
+├── features/                # Cached extracted .npy feature arrays
+├── src/                     # Source modules
+│   ├── config.py            # Central settings, paths, and label mappings
+│   ├── data.py              # Audio loader and metadata builder
+│   ├── make_splits.py       # Stratified train/val/test split generator
+│   ├── cache.py             # Feature and split loading/saving utilities
+│   ├── features_mfcc.py     # MFCC extraction (12, 24, 30 coeffs)
+│   ├── features_mfmc.py     # MFMC extraction (12, 24, 30 coeffs)
+│   ├── sanity.py            # Baseline classifiers (SVM & LogReg)
+│   ├── plots.py             # Plots class distribution & spectrograms
+│   ├── verify.py            # Automated integrity and spot-check tests
+│   └── run_all.py           # Master pipeline runner
+├── results/                 # Sanity tables and output plots
+├── docs/                    # Notes, spec sheet, and paper reference
+│   ├── spec_sheet.md        # Paper parameter and assumption tracking
+│   └── week1_notes.md       # Week 1 narrative and baseline findings
+├── .gitignore               # Ignores .venv, datasets, features, and caches
+├── requirements.txt         # Core dependencies
+└── README.md
 ```
 
 ---
 
 ## Progress Log
 
-### Day 1: Project Setup & Environment Verification
-- Initialized project directory structure with `.gitkeep` placeholders for tracked directories.
-- Initialized Git repository and created comprehensive `.gitignore` ignoring `.venv`, `data/raw/`, `data/processed/`, `features/`, and cache artifacts.
-- Created Python 3.11 virtual environment (`.venv`) and installed all core dependencies (`numpy`, `scipy`, `pandas`, `librosa`, `soundfile`, `scikit-learn`, `matplotlib`, `seaborn`, `tensorflow`, `jupyter`, `tqdm`).
-- Created and executed `src/check_env.py` smoke test verifying synthetic 16 kHz audio generation, 30-band MFCC extraction via `librosa`, and a 1D-CNN training step via TensorFlow/Keras.
-- Created `docs/spec_sheet.md` formalizing all known parameters, assumptions (Adam optimizer, batch size 32, 64-filter 4th conv layer), and unclear aspects (144-dimensional feature vector formulation, data augmentation split protocol A vs B).
-- Implemented `src/config.py` defining central audio hyperparameters (16 kHz, n_fft 512, hop_length 256, seed 42) and EmoDB dataset label/gender mappings.
-- Implemented `src/data.py` featuring unpadded/untrimmed mono `load_audio()` and `build_metadata()`, generating `data/processed/metadata.csv` (535 files validated across all 7 emotions).
-
+### Week 1: Data Preparation, Feature Extraction & Sanity Baselines
+- Configured Python 3.11 virtual environment with audio and scientific libraries (`numpy`, `scipy`, `pandas`, `librosa`, `soundfile`, `scikit-learn`, `matplotlib`, `seaborn`, `tqdm`).
+- Implemented `src/data.py` to parse 535 EmoDB files, extracting speaker, gender, emotion codes, and true audio durations.
+- Generated stratified 60/20/20 splits (`train`: 321, `val`: 107, `test`: 107).
+- Extracted and cached both MFCC and MFMC feature matrices across 12, 24, and 30 coefficients ($2 \times n$ pooled statistics).
+- Ran baseline evaluations using SVM and Logistic Regression; test accuracies reached up to **88.79%** (MFCC-30) and **84.11%** (MFMC-30), decisively beating the majority-class baseline of **23.7%**.
+- Generated exploratory visualizations and confirmed all data integrity assertions with `src/verify.py`.
+- Formulated specification sheet (`docs/spec_sheet.md`) and Week 1 summary notes (`docs/week1_notes.md`).

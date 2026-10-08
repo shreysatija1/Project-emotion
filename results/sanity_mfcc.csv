@@ -1,0 +1,7 @@
+features,n_coeff,vector_size,classifier,val_acc,test_acc
+MFCC,12,24,SVM,0.7757,0.8037
+MFCC,12,24,LogReg,0.7477,0.8131
+MFCC,24,48,SVM,0.8037,0.8598
+MFCC,24,48,LogReg,0.7383,0.8318
+MFCC,30,60,SVM,0.7757,0.8879
+MFCC,30,60,LogReg,0.729,0.8505

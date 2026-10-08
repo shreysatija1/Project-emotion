@@ -1,16 +1,6 @@
-# Virtual environment
-.venv/
-
-# Dataset and cached feature directories (ignore contents but keep folder tracked via .gitkeep)
-data/raw/*
-!data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-features/*
-!features/.gitkeep
-
-# Python cache and checkpoints
-__pycache__/
-*.py[cod]
-*$py.class
-.ipynb_checkpoints/
+.venv
+data/raw
+data/processed
+features
+__pycache__
+.ipynb_checkpoints
