@@ -77,7 +77,9 @@ ser-repro/
 │   └── processed/       # Preprocessed audio waveforms or train/val/test splits
 ├── features/            # Cached extracted feature arrays (.npy)
 ├── src/                 # Python source code modules
-│   └── check_env.py     # Environment verification and smoke test
+│   ├── check_env.py     # Environment verification and smoke test
+│   ├── config.py        # Central hyperparameters, paths, and mappings
+│   └── data.py          # Audio loading and metadata generation
 ├── notebooks/           # Jupyter exploratory notebooks
 ├── results/             # Evaluation metrics, confusion matrices, logs, and plots
 ├── docs/                # Documentation, paper PDF, and specification sheets
@@ -98,3 +100,6 @@ ser-repro/
 - Created Python 3.11 virtual environment (`.venv`) and installed all core dependencies (`numpy`, `scipy`, `pandas`, `librosa`, `soundfile`, `scikit-learn`, `matplotlib`, `seaborn`, `tensorflow`, `jupyter`, `tqdm`).
 - Created and executed `src/check_env.py` smoke test verifying synthetic 16 kHz audio generation, 30-band MFCC extraction via `librosa`, and a 1D-CNN training step via TensorFlow/Keras.
 - Created `docs/spec_sheet.md` formalizing all known parameters, assumptions (Adam optimizer, batch size 32, 64-filter 4th conv layer), and unclear aspects (144-dimensional feature vector formulation, data augmentation split protocol A vs B).
+- Implemented `src/config.py` defining central audio hyperparameters (16 kHz, n_fft 512, hop_length 256, seed 42) and EmoDB dataset label/gender mappings.
+- Implemented `src/data.py` featuring unpadded/untrimmed mono `load_audio()` and `build_metadata()`, generating `data/processed/metadata.csv` (535 files validated across all 7 emotions).
+
