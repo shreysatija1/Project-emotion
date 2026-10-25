@@ -60,8 +60,23 @@ To test cross-lingual validity and assess whether our findings generalize beyond
 
 All datasets were resampled to 16 kHz mono, preprocessed identically, and evaluated across seeds 42, 43, 44 under stratified 60/20/20 partitioning.
 
-### 2.2 Cross-Corpus Performance Dynamics
-*(Summary table to be populated automatically from `week4_summary_table.csv` upon grid completion)*
+### 2.2 Cross-Corpus Performance Dynamics & Theoretical Chance Levels
+
+> [!IMPORTANT]
+> **Chance Levels Differ Substantially Across Benchmarks:**
+> - **AESDD (5 classes):** $\text{Chance Level} = \frac{1}{5} = \mathbf{20.0\%}$
+> - **MESD (6 classes):** $\text{Chance Level} = \frac{1}{6} \approx \mathbf{16.7\%}$
+> - **CAFE (7 classes):** $\text{Chance Level (Uniform)} = \frac{1}{7} \approx \mathbf{14.3\%}$ (Majority class baseline = $15.4\%$)
+> - **EmoDB (7 classes):** $\text{Chance Level (Uniform)} = \frac{1}{7} \approx \mathbf{14.3\%}$ (Majority class baseline for Anger = $23.7\%$)
+>
+> A model achieving $50\%$ test accuracy on AESDD is $2.5\times$ chance, whereas $50\%$ on CAFE/EmoDB represents $3.5\times$ chance.
+
+| Dataset | Language | Classes | Chance Level | MFCC 30 (None) | MFCC 30 (Ver A) | MFMC 30 (None) | MFMC 30 (Ver A) | Paper Claim |
+|---|---|---|---|---|---|---|---|---|
+| **EmoDB** | German | 7 | 14.3% | 71.0% ± 0.9% | 70.7% ± 4.6% | 65.7% ± 1.9% | 72.3% ± 3.3% | 97.5% |
+| **AESDD** | Greek | 5 | 20.0% | 57.0% ± 6.6% | 62.7% ± 3.1% | 60.7% ± 2.5% | 65.3% ± 1.5% | 99.2% |
+| **CAFE** | French | 7 | 14.3% | 46.1% ± 5.2% | 39.9% ± 4.2% | 50.0% ± 1.1% | 54.6% ± 6.7% | 99.5% |
+| **MESD** | Spanish | 6 | 16.7% | 66.3% ± 4.3% | 69.0% ± 1.3% | 64.0% ± 5.5% | 67.3% ± 0.4% | 96.9% |
 
 #### Preliminary Observations:
 1. **Corpus Difficulty Hierarchy:**

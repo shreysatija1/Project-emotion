@@ -488,14 +488,18 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
     tf7_1 = tb7_1.text_frame
     tf7_1.word_wrap = True
     tf7_1.text = (
-        "• Inherent Dataset Difficulty:\n"
-        "  - AESDD (5 classes): Yields highest accuracy (65–75%) due to fewer emotion categories and exaggerated theatrical acting.\n"
-        "  - CAFE (7 classes): Ranges between 50–62%, showing balanced but challenging boundaries between subtle emotions.\n"
-        "  - MESD (6 classes): Yields lowest accuracy (35–48%) due to single-word utterances lacking sentence-level prosodic context.\n\n"
-        "• Does Gaussian Noise Augmentation Help Globally?\n"
-        "  - Across all 4 datasets, Version A (clean 5x) provides modest, non-uniform effects: typically between -1.5% and +3.0% on test accuracy.\n"
-        "  - No dataset observed gains exceeding 4% under leak-free conditions.\n"
-        "  - Paper's claimed +10.3% jump (86.9% -> 97.2%) fails to replicate on any corpus."
+        "• Theoretical Chance Levels Differ:\n"
+        "  - AESDD (5 classes): 20.0% | MESD (6 classes): 16.7%\n"
+        "  - CAFE (7 classes): 14.3% | EmoDB (7 classes): 14.3%\n"
+        "  - Evaluating 50% on 5 classes (2.5x chance) vs. 7 classes (3.5x chance).\n\n"
+        "• Observed Cross-Corpus Accuracies (30 Coeffs, None vs. Ver A):\n"
+        "  - AESDD (Greek, 5 cls): 57–61% -> 63–65% (Paper claims: 99.2%)\n"
+        "  - MESD (Spanish, 6 cls): 64–66% -> 67–69% (Paper claims: 96.9%)\n"
+        "  - EmoDB (German, 7 cls): 66–71% -> 71–72% (Paper claims: 97.5%)\n"
+        "  - CAFE (French, 7 cls): 46–50% -> 40–55% (Paper claims: 99.5%)\n\n"
+        "• Core Finding on Augmentation:\n"
+        "  - Across all 4 benchmarks, clean Version A augmentation yields only -2% to +6% change.\n"
+        "  - The paper's claimed ~97–99% figures remain completely unreplicable under leak-free validation."
     )
     for p in tf7_1.paragraphs:
         p.font.size = Pt(11)

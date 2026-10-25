@@ -98,10 +98,10 @@ def plot_dataset_comparison(df):
     if strat.empty:
         return
 
-    # Compare 30 coefficients for MFCC and MFMC side-by-side
-    sub = strat[strat["coeffs"] == 30].copy()
+    # Compare 30 coefficients for MFCC and MFMC side-by-side (none vs version_a)
+    sub = strat[(strat["coeffs"] == 30) & (strat["setup"].isin(["none", "version_a"]))].copy()
     if sub.empty:
-        sub = strat
+        sub = strat[strat["setup"].isin(["none", "version_a"])].copy()
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 5), sharey=True)
     palette = {"none": "#64748b", "version_a": "#2563eb"}
@@ -127,6 +127,15 @@ def plot_dataset_comparison(df):
         datasets = [d for d in feat_sub["dataset"].unique()]
         ax.set_xticks(range(len(datasets)))
         ax.set_xticklabels([d.upper() for d in datasets])
+        
+        # Add chance level indicators per dataset
+        chance_map = {"emodb": 1/7, "cafe": 1/7, "mesd": 1/6, "aesdd": 1/5}
+        for d_idx, d_name in enumerate(datasets):
+            ch = chance_map.get(d_name.lower(), 1/7)
+            ax.hlines(y=ch, xmin=d_idx-0.35, xmax=d_idx+0.35, colors="#dc2626", linestyles=":", linewidth=1.5,
+                      label="Chance Level" if d_idx == 0 and idx == 0 else "")
+            ax.text(d_idx, ch + 0.02, f"Chance: {ch*100:.1f}%", ha="center", fontsize=8, color="#b91c1c", fontweight="bold")
+            
         ax.legend(title="Setup", labels=["No Augmentation", "Version A (Clean 5x)"], loc="lower right")
 
     plt.suptitle("Task 2: Multi-Corpus Emotion Recognition Baseline (EmoDB, CAFE, AESDD, MESD)", fontsize=15, fontweight="bold", y=1.02)
@@ -141,6 +150,9 @@ def plot_speaker_independent_comparison(df):
     """Plot Task 3: Stratified vs Speaker-Independent Split."""
     spk_data = df[(df["format"] == "baseline") & (df["setup"] == "none")].copy()
     if spk_data.empty:
+        return
+    if "speaker_independent" not in spk_data["split_type"].values:
+        print("Notice: Speaker-independent runs not completed yet; skipping Task 3 plot.")
         return
 
     # Compare on datasets with speaker splits (30 coeffs)
