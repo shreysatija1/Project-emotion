@@ -111,21 +111,29 @@ def prepare_run_data(dataset, feat_kind, n_coeff, feat_format, setup, split_type
         X_train = X_cached[tr_idx]
         y_train = labels[tr_idx]
     elif setup == "version_a":
-        # Augment ONLY training clips (5x)
-        rng = np.random.default_rng(seed)
-        aug_feats = []
-        aug_labels = []
-        for idx in tr_idx:
-            row = meta.iloc[idx]
-            wav_path = ROOT_DIR / row["rel_path"]
-            y_orig = load_audio_clip(wav_path, SR)
-            aug_waves = augment_waveform(y_orig, rng)
-            for y_aug in aug_waves:
-                feat = extract_single_feature(y_aug, feat_kind, n_coeff, feat_format)
-                aug_feats.append(feat)
-                aug_labels.append(labels[idx])
-        X_train = np.array(aug_feats, dtype=np.float32)
-        y_train = np.array(aug_labels, dtype=np.int32)
+        # Check if augmented training features are already cached
+        aug_cache = FEAT_DIR / f"cache_aug_{dataset}_{feat_kind}_{n_coeff}_{feat_format}_{split_type}_seed{seed}.npz"
+        if aug_cache.is_file():
+            loaded = np.load(aug_cache)
+            X_train = loaded["X"]
+            y_train = loaded["y"]
+        else:
+            # Augment ONLY training clips (5x)
+            rng = np.random.default_rng(seed)
+            aug_feats = []
+            aug_labels = []
+            for idx in tr_idx:
+                row = meta.iloc[idx]
+                wav_path = ROOT_DIR / row["rel_path"]
+                y_orig = load_audio_clip(wav_path, SR)
+                aug_waves = augment_waveform(y_orig, rng)
+                for y_aug in aug_waves:
+                    feat = extract_single_feature(y_aug, feat_kind, n_coeff, feat_format)
+                    aug_feats.append(feat)
+                    aug_labels.append(labels[idx])
+            X_train = np.array(aug_feats, dtype=np.float32)
+            y_train = np.array(aug_labels, dtype=np.int32)
+            np.savez_compressed(aug_cache, X=X_train, y=y_train)
     else:
         raise ValueError(f"Unknown setup: {setup}")
 
@@ -169,6 +177,7 @@ def execute_run(
     csv_out=RESULTS_DIR / "week4_results.csv",
 ):
     """Execute a single run, score once, and append to CSV."""
+    keras.backend.clear_session()
     set_seed(seed)
     num_classes_map = {"emodb": 7, "cafe": 7, "aesdd": 5, "mesd": 6}
     num_classes = num_classes_map[dataset]
@@ -224,6 +233,11 @@ def execute_run(
     test_loss, test_acc = best_model.evaluate(X_test, y_test, verbose=0)
     train_loss, train_acc = best_model.evaluate(X_train, y_train, verbose=0)
     elapsed = time.time() - start_time
+
+    # Clean up model references and session
+    del model
+    del best_model
+    keras.backend.clear_session()
 
     print(f"  Finished in {elapsed:.1f}s | Val Acc: {val_acc*100:.2f}% | Test Acc: {test_acc*100:.2f}% | Train Acc: {train_acc*100:.2f}%")
 

@@ -142,5 +142,21 @@ if __name__ == "__main__":
     if args.task3 or args.all:
         run_task3_speaker_independent()
 
+    # Automatically generate summary tables, plots, and updated deck
+    if args.task1 or args.task2 or args.task3 or args.all:
+        print("\n" + "="*70)
+        print("EXPERIMENT BATCH COMPLETE. GENERATING SUMMARY TABLES, PLOTS, AND DECK...")
+        print("="*70)
+        try:
+            from generate_week4_summary import generate_all_summaries
+            generate_all_summaries()
+        except Exception as e:
+            print(f"Summary generation notice: {e}")
+        try:
+            from generate_week4_deck import create_deck
+            create_deck()
+        except Exception as e:
+            print(f"Deck generation notice: {e}")
+
     if not (args.task1 or args.task2 or args.task3 or args.all):
         print("Please specify --task1, --task2, --task3, or --all.")
