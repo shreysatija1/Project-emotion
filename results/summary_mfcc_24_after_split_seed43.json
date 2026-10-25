@@ -1,0 +1,16 @@
+{
+  "run_name": "mfcc_24_after_split_seed43",
+  "feature_type": "mfcc",
+  "n_coeff": 24,
+  "aug_mode": "after_split",
+  "seed": 43,
+  "epochs_trained": 100,
+  "train_loss": 0.0212,
+  "train_accuracy": 0.9931,
+  "val_loss": 2.1721,
+  "val_accuracy": 0.6822,
+  "elapsed_seconds": 49.27,
+  "best_model_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\models\\best_model_mfcc_24_after_split_seed43.keras",
+  "scaler_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\results\\scaler_mfcc_24_after_split_seed43.joblib",
+  "history_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\results\\history_mfcc_24_after_split_seed43.csv"
+}

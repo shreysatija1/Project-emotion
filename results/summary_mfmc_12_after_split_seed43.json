@@ -1,0 +1,16 @@
+{
+  "run_name": "mfmc_12_after_split_seed43",
+  "feature_type": "mfmc",
+  "n_coeff": 12,
+  "aug_mode": "after_split",
+  "seed": 43,
+  "epochs_trained": 100,
+  "train_loss": 0.0759,
+  "train_accuracy": 0.9726,
+  "val_loss": 2.2141,
+  "val_accuracy": 0.7196,
+  "elapsed_seconds": 34.64,
+  "best_model_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\models\\best_model_mfmc_12_after_split_seed43.keras",
+  "scaler_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\results\\scaler_mfmc_12_after_split_seed43.joblib",
+  "history_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\results\\history_mfmc_12_after_split_seed43.csv"
+}

@@ -1,0 +1,16 @@
+{
+  "run_name": "mfmc_12_none_seed42",
+  "feature_type": "mfmc",
+  "n_coeff": 12,
+  "aug_mode": "none",
+  "seed": 42,
+  "epochs_trained": 100,
+  "train_loss": 0.0518,
+  "train_accuracy": 0.9875,
+  "val_loss": 3.1201,
+  "val_accuracy": 0.5981,
+  "elapsed_seconds": 17.62,
+  "best_model_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\models\\best_model_mfmc_12_none_seed42.keras",
+  "scaler_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\results\\scaler_mfmc_12_none_seed42.joblib",
+  "history_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\results\\history_mfmc_12_none_seed42.csv"
+}

@@ -10,8 +10,10 @@ Strict Reproduction Rules:
 """
 
 import os
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import sys
 import time
+import gc
 import random
 from pathlib import Path
 import numpy as np
@@ -178,6 +180,7 @@ def execute_run(
 ):
     """Execute a single run, score once, and append to CSV."""
     keras.backend.clear_session()
+    gc.collect()
     set_seed(seed)
     num_classes_map = {"emodb": 7, "cafe": 7, "aesdd": 5, "mesd": 6}
     num_classes = num_classes_map[dataset]
@@ -238,6 +241,7 @@ def execute_run(
     del model
     del best_model
     keras.backend.clear_session()
+    gc.collect()
 
     print(f"  Finished in {elapsed:.1f}s | Val Acc: {val_acc*100:.2f}% | Test Acc: {test_acc*100:.2f}% | Train Acc: {train_acc*100:.2f}%")
 

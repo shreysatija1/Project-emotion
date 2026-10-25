@@ -1,0 +1,16 @@
+{
+  "run_name": "mfcc_12_none_seed44",
+  "feature_type": "mfcc",
+  "n_coeff": 12,
+  "aug_mode": "none",
+  "seed": 44,
+  "epochs_trained": 100,
+  "train_loss": 0.0041,
+  "train_accuracy": 1.0,
+  "val_loss": 2.121,
+  "val_accuracy": 0.6636,
+  "elapsed_seconds": 21.12,
+  "best_model_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\models\\best_model_mfcc_12_none_seed44.keras",
+  "scaler_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\results\\scaler_mfcc_12_none_seed44.joblib",
+  "history_path": "C:\\Users\\Shrey\\OneDrive\\Documents\\Project Emotion\\results\\history_mfcc_12_none_seed44.csv"
+}

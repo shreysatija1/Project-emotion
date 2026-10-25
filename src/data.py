@@ -9,7 +9,7 @@ def parse_filename(fname):
     stem = Path(fname).stem          # e.g. 03a01Fa
     speaker = stem[0:2]
     code = stem[5]                   # 6th character = emotion letter
-    return {"filename": Path(fname).name, "speaker": speaker,
+    return {"clip_id": stem, "filename": Path(fname).name, "speaker": speaker,
             "gender": SPEAKER_GENDER[speaker], "emotion": EMOTION_MAP[code]}
 
 
