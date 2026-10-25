@@ -1,0 +1,1018 @@
+=== PAGE 1 ===
+Automatika
+Journal for Control, Measurement, Electronics, Computing and
+Communications
+ISSN: 0005-1144 (Print) 1848-3380 (Online) Journal homepage: www.tandfonline.com/journals/taut20
+Data augmentation using a 1D-CNN model
+with MFCC/MFMC features for speech emotion
+recognition
+Thomas Mary Little Flower, Thirasama Jaya & Sreedharan Christopher Ezhil
+Singh
+To cite this article: Thomas Mary Little Flower, Thirasama Jaya & Sreedharan Christopher Ezhil
+Singh (2024) Data augmentation using a 1D-CNN model with MFCC/MFMC features for speech
+emotion recognition, Automatika, 65:4, 1325-1338, DOI: 10.1080/00051144.2024.2371249
+To link to this article:  https://doi.org/10.1080/00051144.2024.2371249
+© 2024 The Author(s). Published by Informa
+UK Limited, trading as Taylor & Francis
+Group.
+Published online: 03 Jul 2024.
+Submit your article to this journal 
+Article views: 2617
+View related articles 
+View Crossmark data
+Citing articles: 6 View citing articles 
+Full Terms & Conditions of access and use can be found at
+https://www.tandfonline.com/action/journalInformation?journalCode=taut20
+
+=== PAGE 2 ===
+AUTOMATIKA
+2024,VOL.65,NO.4,1325–1338
+https://doi.org/10.1080/00051144.2024.2371249
+Data augmentation using a 1D-CNN model with MFCC/MFMC features for
+speech emotion recognition
+Thomas Mary Little Flower a, Thirasama Jayab and Sreedharan Christopher Ezhil Singh c
+aDepartmentofECE,St.Xavier’sCatholicCollegeofEngineering,Chunkankadai,India; bDepartmentofECE,SaveethaCollegeof
+Engineering,Chennai,India; cDepartmentofMechanicalEngineering,VimalJyothiEngineeringCollege,Kannur,India
+ABSTRACT
+Speech emotion recognition (SER) is attractive in several domains, such as automated translation,
+call centres, intelligent healthcare, and human–computer interaction. Deep learning models for
+emotion identification need considerable labelled data, which is only sometimes available in the
+SER industry. A database needs enough speech samples, good features, and a better classifier to
+identify emotions efficiently. This study uses data augmentation to enhance the amount of input
+voice samples and address the data shortage issue. The database capacity increases by adding
+white noise to the speech signals by data augmentation. In this work, the Mel-frequency Cepstral
+Coefficient (MFCC) and Mel-frequency Magnitude Coefficient (MFMC) features, along with a one-
+dimensional convolutional neural network (1D-CNN), are used to classify speech emotions. The
+datasets utilized to estimate the model’s enactment were AESDD, CAFE, EmoDB, IEMOCAP, and
+MESD. The data augmentation with the 1D-CNN (MFMC) model performed best, with an average
+accuracy of 99.2% for AESDD, 99.5% for CAFE, 97.5% for EmoDB, 92.4% for IEMOCAP and 96.9%
+for the MESD database. The proposed 1D-CNN (MFMC) with data augmentation outperforms the
+1D-CNN (MFCC) without data augmentation in emotion recognition.
+ARTICLE HISTORY
+Received19December2023
+Accepted18June2024
+KEYWORDS
+Neuralnetworks;aﬀective
+computing;emotion
+recognition;audiodatabase;
+accuracy
+1. Introduction
+Speech is the most effective, widespread, and natural
+mode of human communication. A speech signal con-
+veys information about the speaker’s gender, age, lan-
+guage, dialect, and emotional state in addition to con-
+veyingamessage[ 1].Onemethodthathasemergeddue
+to technological advancement to enhance and expe-
+ditehuman–computercontactisspeakingtoamachine.
+Because of this, researchers have looked into various
+strategies over the last few decades to improve spoken
+communication’s efficacy using technologies like voice
+and speaker recognition [2]. One of the primary goals
+ofspeechemotionrecognitionistogenerateamachine
+t h a tc a nh e a ra n dr e a c tl i k eah u m a na n dp r o d u c ed i f -
+ferent types of emotions found in speech. Simulating
+the distinctive relationship between the information a
+microphone picks up and the accompanying emotion
+isthemainchallenge[ 3].Speechcanexpressemotions
+eitherconsciouslyorunconsciously,thankstotheneu-
+rological system. Emotional speech recognition recog-
+nizesaperson’semotionalstatefromtheirvoice.Dueto
+itsnumeroususesinmanyfields,emotionidentification
+is gaining prominence in the detection of frustration,
+disappointment, surprise, and amusement [4].
+Spectral-based features like MFCC, log-frequency
+power coefficients (LFPC), log-mel spectrograms
+(LMS),linearpredictioncoefficients(LPC),andMFCC
+[5–8] are among the most common feature types [9].
+However,SER’spooreraccuracyindetectingemotions
+remains a challenge. The difficulties arise because var-
+ious people express emotions differently, standardized
+databases are available, and the same speech signals
+might convey multiple emotions based on the circum-
+stances [10]. We investigated the feature significance
+f o re v e r yc l a s s i fi e ru s i n gf e a t u r ei m p o r t a n c em e t h o d -
+ologies[11].MFMCandMFCCcharacteristicsachieve
+speechemotioncategorizationinthisstudy.
+Deep learning (DL) has recently attracted much
+attention from the research community. The feature
+extraction procedure has been mechanized in DL
+[12]. As a result, hidden patterns can be successfully
+foundeveninthemanuallyextractedfeatures,enhanc-
+ing the SER operation’s performance. However, cus-
+tomized features have been very successful for SER.
+Researchers working on emotion recognition are pay-
+ing much attention to deep learning algorithms [13].
+Generally, DNNs perform better than regular neural
+networks (NNs). However, they frequently cause over-
+fittingissuesandneedalotoftrainingsamplestoover-
+come them. Restricted Boltzmann Machines (RBMs),
+aD La p p r o a c hd e v e l o p e di n i t i a l l y ,a r eu s e di nt h e
+Deep Belief Network (DBN). DBN is faster than a
+CONTACT ThomasMaryLittleFlower mary@sxcce.edu.in DepartmentofECE,St.Xavier’sCatholicCollegeofEngineering,Chunkankadai629003,
+India
+©2024TheAuthor(s).PublishedbyInformaUKLimited,tradingasTaylor&FrancisGroup.
+ThisisanOpenAccessarticledistributedunderthetermsoftheCreativeCommonsAttributionLicense( http://creativecommons.org/licenses/by/4.0/),whichpermitsunrestricted
+use,distribution,andreproductioninanymedium,providedtheoriginalworkisproperlycited.Thetermsonwhichthisarticlehasbeenpublishedal lowthepostingoftheAccepted
+Manuscriptinarepositorybytheauthor(s)orwiththeirconsent.
+
+=== PAGE 3 ===
+1326 T. MARY LITTLE FLOWER ET AL.
+standard neural network because of the use of RBM.
+Later, convolutional neural networks (CNN) gained
+much traction because of their enhanced discrimina-
+tive power over DBN. Convolution, pooling, tangent
+squashing, rectifier, and normalizing make up a stan-
+dard CNN algorithm [14]. To build a progressive hier-
+archy of usable features, CNN uses feature extractions
+andafewconvolutionalstacks[ 15].Convolutionallay-
+ers and subsampling layers follow a hierarchical NN
+structure[16].The1DCNNmodelworkswellintime-
+series data and has shown tremendous potential for
+speech-emotion classification tasks. In this work, we
+have analyzed speaker-independent emotion recogni-
+tion from speech using 1D-CNN (MFCC) and 1D-
+CNN(MFMC)modelswithandwithoutdataaugmen-
+tation.
+Many deeplearning(DL)models havebeensearch-
+ing to increase the accuracy of speech emotion iden-
+tification, including deep CNNs, recurrent neural net-
+works (RNN), and long short-term memory (LSTM)
+networks.Duetodifficultiesincollecting,speechemo-
+tion corpora are often tiny and deficient datasets. The
+performanceoftheDLmodelsisconstrainedsincethey
+a r ep r o n et oo v e r fi t t i n g .T h i sa i m st oi d e n t i fyt h em o s t
+beneficial kind of data augmentation and the quantity
+of data augmentations needed to solve the SER issue.
+This data augmentation technique permutes the origi-
+naldatawithnoisetogeneratefreshvoicesamplesfrom
+agivendataset.Thisstudyexamined1D-CNN(MFCC)
+and 1D-CNN (MFMC) models with and without data
+argumentationforspeaker-independentemotioniden-
+tification from speech. The critical influence of this
+studyisasgivenbelow:
+ We thoroughly examined the literature on speech
+emotion recognition and discovered that speech
+emotions are hybrid, including spectral and spa-
+tialinformation.Accordingtotheliterature,bothof
+thesetraitsprovidecrucialdataforrecognizingemo-
+tions. The present SER systems don’t have DA with
+CNN architecture to learn high-level deep features
+and recognize the emotions present in the speech
+signal. Due to this restriction, we suggested two
+models for emotion recognition using 1D – CNN
+(MFCC)and1D –CNN(MFMC)modelswithand
+withoutDA.
+ This work is not only theoretical but also practical.
+Weaimtocategorizethespeechemotionusinga1D
+CNN (MFCC) model and to detect the high-level
+hidden supra-segmental characteristics from those
+extracted segmental features during training. To
+ensure the robustness of our research, we have used
+multiple public speech emotion datasets, including
+AESDD, CAFE, EmoDB, IEMOCAP, and MESD.
+This diverse dataset allows us to achieve the high-
+est detection accuracy, making our research more
+applicableinreal-worldscenarios.
+ Data augmentation is a key aspect of our model
+training process. It not only enhances the number
+of training samples but also decreases overfitting,
+thereby improving the model’s generalization abil-
+ity. The model that was trained with 60% of data
+with DA shows a significant improvement in detec-
+tion accuracy, validating the effectiveness of our
+approach.
+This paper deliberates the details of the workflow.
+The sections are discussed as follows: The SER task’s
+current literature review is presented in Section2 to
+help readers understand the current trend, develop
+their perception, and identify areas for task improve-
+ment.Specifythesummaryofthearchitecturedatasets,
+data augmentation methods, feature extraction proce-
+dure, suggested model, and model training in Section
+3. A thorough justification of the experimental find-
+ings for the suggested speaker-independent individ-
+ualmodel’s1D-CNN(MFCC)and1D-CNN(MFMC)
+with data augmentation is provided in Section 4.
+Section 5 serves as our conclusion and discusses
+the issues facing SER research and potential future
+directions.
+2. Literature review
+Taiba Majid Wani et al. [2]h a v ep r e s e n t e dt h ed i s -
+tinguishing silent discriminants and pertinent speech
+emotion recognition characteristics. On spectrograms
+producedfromtheSAVEEdataset,CNNandtheDeep
+stride CNN (DSCNN) were applied. The accuracy of
+DSCNN architecture exceeds CNN, which has a pre-
+diction accuracy of 87.8%. Dias Issa et al. [3]s t a t e
+that emotion identification from speech is one of the
+most challenging topics in data science. The architec-
+ture uses MFCC features to classify emotions. This
+framework achieves a recognition accuracy of 71.61%
+for RAVDESS, 95.71% for EMO-DB, and 64.3% for
+IEMOCAPaudiocategorizationtasks.
+Youddha Beer Singh et al. [4]p r o p o s e dat e c h n i q u e
+forrecognizingemotionsinspeechusing1DCNNand
+MFCC characteristics. This method is assessed using
+RAVDESS, a prominent public speech corpus. Addi-
+tionally, average accuracy was reported to be higher
+(82.93%) compared to the current SER model with
+lowercomputingcosts.
+Jothimani et al. [9]p r e p r o c e s s e dt h es p e e c hs i g n a l s
+beforeusingtheMFCC,ZCR,andRMSfeatureextrac-
+tiontechniquestodramaticallyincreaseemotioniden-
+tification ability. A cutting-edge CNN is suggested for
+improved emotion categorization. Recognition accu-
+racywasobtainedforthedatabasesRAVDESS(92.6%),
+CREMA(89.5%),SAVEE(84.9%),andTESS(99.5%).
+Pan S-T and Wu H-J [ 12] provide a unique
+machine-learning model for speech emotion identifi-
+cationdubbedCLDNN,whichintegratesCNN,LSTM,
+
+=== PAGE 4 ===
+AUTOMATIKA 1327
+andDNN.Thesuggestedmodelisexperimentallyeval-
+uatedusingthreedatabases:RAVDESS,EMO-DB,and
+IEMOCAP. The findings show that the LSTM model
+successfully represents the features recovered from the
+1DCNNowingtothetime-seriesnatureofspeechsig-
+nals.Additionally,thedataaugmentationstrategyused
+inthisresearchimprovestherecognitionaccuracyand
+stabilityofthesystemsforvariousdatabases.
+Vryzas et al. [17]h a v es u g g e s t e dam o d e lf o rS E R
+based on the CNN framework. The AESDD is the
+speech emotion dataset utilized to train and test the
+model, and DA methods are also used. The accuracy
+oftheCNNarchitectureis8.4%higherthanthatofthe
+SVMbaselinemodel.
+Seknedy et al. [11] tested SER utilizing RAVDESS,
+EmoDB, and CaFE speech emotion datasets on three
+commonly utilized languages: English, German, and
+French.Fourmachinelearni ngclassifiers,suchasSVM,
+Random Forest, Multi-Layer Perceptron, and Logistic
+Regression,wereused.Intermsofrecognitionratesand
+overall running performance, SVM was determined
+t ob et h eb e s tc l a s s i fi e r ,a n di t se m o t i o nr e c o g n i t i o n
+rate was 70.56%, 85.97%, and 70.61% for RADVESS,
+EmoDB,andcafédatabase,respectively.
+To create samples for underrepresented emotions,
+Chatziagapi et al. [14] examined DA utilizing gen-
+erative adversarial networks (GANs). Two datasets,
+IEMOCAP and FEEL-25k, were used to evaluate emo-
+tion recognition. The GAN-based technique shows
+a 10% relative performance gain in IEMOCAP and
+a 5% improvement in FEEL-25k when the minor-
+ity classes are added. Multiple augmenting approaches
+were employed to supplement the training data and
+simplify the model demonstration, as discussed by
+Bautista et al. [15]. Mel-spectrograms were created
+from raw audio data and used as input for a CNN
+attention-based network. The test dataset achieves the
+maximumdegreeofaccuracy,with89.33%foraparallel
+CNN-Transformer network and 85.67% for a paral-
+lel CNN-BLSTM-Attention network on the RAVDESS
+dataset.
+Atmaja et al. [16] experimented with the effects
+of DA techniques to enhance SER accuracy. The
+IEMOCAPandTwitter-basedJapaneseemotivespeech
+datasets are used in the tests. The findings indicate
+speaker-independentdatawithtwodataaugmentation
+with silence removal. The experiment shows the need
+t os e l e c tt h eb e s tD Aa p p r o a c hf o rag i v e ns i t u a t i o n
+by highlighting the quantity of DA and the effective-
+ness of SER. To attend to emotional traits with various
+granularities, Xu et al. [18]e x e c u t e dam u l t i s c a l ea r e a
+attention in a DCNN. To increase the classifier’s abil-
+ity to generalize and execute DA via vocal length to
+address the issue of sparse data. On the IEMOCAP
+dataset, experiments produced results with a weighted
+accuracy (WA) of 79.34% and an unweighted accuracy
+of77.54%.(UA).UsingtheIEMOCAPdataset,Etienne
+et al. [19] described the CNN+LSTM architecture for
+SER.Themethodsoflayer-wiseoptimizertuning,batch
+normalization (BN) of recurrent layers, and data aug-
+mentation using vocal track length perturbation yield
+excellentoutcomesof64.5%forWAand61.7%forUA
+onfour emotions.
+Jahangir R et al. [13]suggestedauniqueSERframe-
+workthatusesdataaugmentationtechniquestoextract
+seven important feature sets from each speech. Using
+the EMO-DB database, the retrieved feature vector is
+fedintothe1DCNNtorecognizeemotions.Thetesting
+findings demonstrate that the SER framework outper-
+formed existing SER frameworks with an accuracy of
+96.7%forEMO-DB.
+M d .R a y h a nA h m e de ta l .[20], prompted by the
+efficient feature extraction of CNN, LSTM, and GRU,
+offer an ensemble that uses the combined predictive
+performanceofthreedistinctarchitectures.Theensem-
+ble model achieves 95.42% weighted average accuracy,
+whichisstate-of-the-artforEMO-DBdatasets.
+Liuetal.proposedaFaceNetmodelforSERin2021.
+Thespectrogramfeaturewasextractedfromthespoken
+signal and evaluated using the FaceNet model, which,
+o win gt oi tsc l ea ns ign al s ,r e s ul t edina nem o tio niden -
+tification rate of 68.96% for the IEMOCAP database.
+The FaceNet model’s spectrogram feature pretraining
+ispracticalaccordingtotheperformancemetrics.
+Xu Yunfeng et al. [21] use a hierarchical-grained
+f e a t u r em o d e l( H G F M )t ot a c k l ep o o re m o t i o nc a t e -
+g o r i z a t i o n .T h i sm o d e lc o n t r a s t sw i t haf e wb a s e l i n e
+models, including the bidirectional contextual LSTM,
+theMDNN,thedialogueRNN,andtherecurrentneu-
+ral network. The findings demonstrate that HGFM
+performswellcomparedtobaselinemodels.
+Su et al. [22] used a graph attention approach on a
+gated recurrent unit network to discern emotions in
+voice inputs. For the IEMOCAP database, this strategy
+yieldeda63.8%emotiondetectionrate.
+Saleem et al. [23] state that deep CNN combines
+1D –and2D-cNNmodels.Bothtemporalandspectral
+information were extracted using two parallel CNNs.
+Thehigh-levelfeatureswereconcatenatedandsupplied
+as input to the Deep-CNN model to get the high-
+level features. This model used global feature learning
+(GRU)afterCNNtoexaminecontextualdependencies.
+Thismodelobtainedanaccuracyof94.2%foremotion
+identification in the EmoDB dataset and 81.1% in the
+IEMOCAP database by learning concatenated features
+andtrainingfasterthanLSTM.
+Zengzhao Chen et al. [ 24] investigated speech
+emotion identification using the attention mechanism
+(AMSNet), which combines frame-level manual char-
+acteristicswithutterance-leveldeepfeaturesofvarying
+weights. The two features’ relative importance is con-
+trolled by the weight value, which assigns a higher
+w e i g h tt ot h em o r es i g n i fi c a n tc h a r a c t e r i s t i c s .T h ef e a -
+tures increase the total recognition effect contribution
+
+=== PAGE 5 ===
+1328 T. MARY LITTLE FLOWER ET AL.
+andimprovethemodel’sperformance.Togoabovethe
+limitationsoftraditionalfeaturefusion,anautonomous
+training technique. The findings show that the accu-
+racy of emotion recognition for IEMOCAP is 70.51%,
+whereasforEmoDB,itis88.56%.
+3. Overview of SER
+a. DataSets
+The Mexican Emotional Speech Database (MESD)
+haswaystoexpressanger(1),disgust(2),fear(3),hap-
+piness (4), neutrality (5), and sadness (6). The MESD
+hasvoicesfrombothadultandyoungnon-professional
+performers,includingthreefemales,twomales,andsix
+children. There were 864 separate utterances saved in
+24-bit,48kHzaudiofiles[ 25–27].
+The Canadian French Emotional (CAFE) Speech
+Datasetshowssixprimaryemotions:anger(1),disgust
+(2),happiness(3),fear(5),surprise(6),sadness(7),and
+one neutral (4). Six male and six female actors each
+speakoneline.Thesixfundamentalemotionshavetwo
+degrees of intensity: mild and robust. The 936 utter-
+ancescomprisethedatasetatahigh-resolution192kHz
+samplingratewith24bitspersample[ 28].
+Acted Emotional Speech Dynamic Database
+(AESDD)isanactedemotionalspeechdatabaseinthe
+Greek language. This database has five different emo-
+tions:anger(1),disgust(2),fear(3),happiness(4),and
+sadness (5). About 500 emotional speech utterances
+weremadefrommorethanonerecording.Therecord-
+ings of the speech signal at a 44100 Hz sample rate
+with24bits(5actorsx5emotionsx20utterances)[ 17,
+29–31].
+Emo-DB is a publicly available speech-emotion
+database in the German language. Five male and five
+femalespeakerscontributedtothedatarecording.This
+database consists of 535 data samples and has seven
+emotions: anger (1), boredom (2), disgust (3), anxiety
+(4), happiness (5), sadness (6), and neutral (7) – the
+recordingsofthespeechsignalwitha16kHzsampling
+rate[32].
+The Interactive Emotional Dyadic Motion Cap-
+ture (IEMOCAP) database is a standard multimodal
+and multispeaker (Male and Female) English language
+dataset. Five males and five females elicit emotions by
+readingfromascriptorimprovisinginaconversational
+setting, and the recordings of the speech signal with a
+16kHzsamplingrate.Therearenineemotionspresent
+in this dataset: happiness, anger, excitement, frustra-
+t i o n ,s a d n e s s ,s u r p r i s e ,f e a r ,n e u t r a l ,a n do t h e r s .E a c h
+utterancecanbedividedintoanimprovisedorscripted
+speechsectionandannotatedintonineemotionlabels.
+Atotaloffivesessionsarepresentinthisdatabase.This
+databaseconsistsofatotalof10,039utterances[ 33].
+I nt h i sw o r k ,as p e e c hi m p r o v i s e dd a t a s e tf o re m o -
+tion classification. This improvised dataset consists of
+fivesessions,eachcontainingtwospeakers’speechsam-
+ples.T oevaluatetheperformanceoftheemotionrecog-
+nition model, only four emotional categories, anger
+(1), sadness (2), happiness (3), and surprise (4) from
+improvisedsessions01,02,and03,areconsidered.This
+research used 759improvised speech emotion samples
+formaleandfemalespeakers.
+b. DataAugmentation
+In this work for DA, Gaussian noise processing
+methods have been applied. The novelty of this work
+explainstheexperimentconductedwiththreedifferent
+speech data augmentations (noise), resulting in 4 aug-
+mentation sets, as detailed in Table1.Se t2i so b t a i n e d
+from Set 1 by permuting the speech signal with zero
+noise. Set 3 from Set 2 with a noise level of 0.01. Sim-
+ilarly, Set 4 from Set 2 with a noise level of 0.025 and
+Set 5 were obtained from Set 1 by permutation of the
+originalspeechsignalwithanoiselevelof0.05applied
+directly to the audio signal prior. In the first phase
+of DA [34–36], the original dataset (CAFE) was per-
+mutedfromthedatasetwithzeronoisetoget936extra
+utterances. This process was applied, and the resulting
+dataset included 1872 utterances. In the second phase,
+the permutated first phase dataset was used with 0.01
+noise to get extra 936 utterances; in the third phase,
+the permutated first phase dataset was used with 0.025
+noise to get extra 936 utterances; and finally, the origi-
+naldatasetwaspermutatedwith0.05noisetogetextra
+936utterances.Afterdataaugmentation,fourthousand
+six hundred eighty speech samples were for the CAFÉ
+database.
+Set1datasamples = Original(fAn1)
+Set 2 data samples (fDi2)= (fAn1) permutation with
+zeronoise
+Set3datasamples(fFe3) = (fDi2) +0.01noise
+Set4datasamples(fHa4) = (fDi2) +0.025noise
+Set5datasamples(fNe5) = (fAn1)permutation +0.05
+noise
+Total emotion samples= Set 1+Set 2 +Set 3 +Set
+4 +Set5
+The data augmentation [20,21] technique with several
+speech samples in Table1and augmentation processes
+a p pliedtothefivediffer en tspeechemo tio nda tabases.
+c. FeatureExtraction
+Feature extraction converts raw data into an exe-
+cutable form that shows the most critical information
+f o rt h a tt a s k .I nv o i c er e c o g n i t i o n ,c h a r a c t e r i s t i c sa r e
+generallyfromtheacousticdata.TheMFCCsareinflu-
+ential in determining the spectral envelope of a signal,
+which is critical for characterizing various emotional
+states.Pitch,intensity ,andenergyareprosodicqualities
+
+=== PAGE 6 ===
+AUTOMATIKA 1329
+Table 1. NumberofSpeechSamplesAfterDataAugmentation.
+Database Set1 Set2 Set3 Set4 Set5 Totalemotiondata
+AESDD 500 500 500 500 500 2500
+CAFE 936 936 936 936 936 4680
+EmoDB 535 535 535 535 535 2675
+IEMOCAP 759 759 759 759 759 3795
+MESD 864 864 864 864 864 4320
+that describe the pattern of a spoken signal. Some-
+times, prosodic cues cannot distinguish between emo-
+t i o n sb e c a u s et h e ya r et o os i m i l a rt ob ed e t e c t e d .T h e
+LPC, PLP, MFCC [37], and LFPC are a few algorithms
+used to denote the emotion of speech for the emotion
+recognition method. Feature extraction methods typi-
+callyproduceamulti-dimensionalfeaturevectorforall
+speechsamples[ 19].
+a. Mel-FrequencyCepstralCoefficients
+Thespeechsampleisseparatedintoshortsegments,
+asFigure 1illustrates.Subsequently,speechanalysison
+the brief intervals known as frames, during which the
+speech signal remains stationary. The next step, win-
+d o w i n g ,t a p e r st h es i g n a l sc l o s et ot h ef r a m ee d g e s
+a n dp r o v i d e ss p e c t r a lr e s o l u t i o nf o rs p e e c hs o u n d s .A
+hamming window to smooth the edges of the frames.
+The magnitude spectrum of each frame using the
+Fast Fourier Transform (FFT). Then, the Fourier spec-
+trum passes through the mel-filter bank, and the mel-
+spectrumisobtained[ 16].Mel-scaletocircumventthe
+human auditory system’s linear interpretation of pitch.
+Since people can detect subtle changes in speech at
+lower frequencies than at higher frequencies, it adjusts
+thefrequencytoroughlyresemblewhatthehumanear
+canperceive.WhentheMel-scaleisemployed,thecoef-
+fi c i e n t sw i l lo n l yb ea r o u n dt h er e g i o nt h a th u m a n s
+perceiveasthepitch,whichmayresultinamoreaccu-
+rate demonstration of the signal from the viewpoint of
+thehumanemotionsystemwhenusingtheformula.
+Fmel = 2595log10
+(
+1 + f700 ) (1)
+Where f is the natural frequency measured in Hz and
+Fmel is the observed frequency obtained on the mel
+scale,measuredinmels,themelspectrumiscalculated
+by multiplying the power spectrum by triangular mel
+filtersandinEquation(2).
+P(m) =
+N−1∑
+k=0
+(|X(k)|2Hm(k));m = 0,1,2,... ,M-1
+(2)
+W h e r eMi st h en u m b e ro ft r i a n g u l a rm e lw e i g h t i n g
+filters Hm(k) the kth energy spectrum bin contributes
+the mth output band and|X(k)|is the magnitude spec-
+t r u m .N e x t ,t h eD C Ti st ot r a n s l a t et h el o g - m e lf r e -
+quency coefficients into cepstral coefficients. MFCC is
+Figure 1. DemonstratesthebasicstructureofMFCC.
+thenameoftheconversion’soutputinEquation(3).
+C[n] =
+M−1∑
+m=0
+log10(P(m))cos
+(/Pi1n(m −0.5)
+M
+)
+;n
+= 0,1,2, ... ,L-1 (3)
+Where C[n] are the cepstral coefficients and L is the
+number of MFCCs.
+b. MelFrequencyMagnitudeCoefficient
+TheMFMCfeatureextractionprocedureisinFigure
+2.F r a m i n ga n dw i n d o w i n gt e c h n i q u e sa r eu s e dfi r s t
+for each speech. The X(k) spectra using a Fast Fourier
+transformoneachwindowedsignal.Tocreatethelinear
+spectrum, which passes through several Mel-scale tri-
+a n g l efi l t e rb a n k s ,t h er e l e v a n tm o d u l u sa n di t ss q u a r e
+u s i n gt h es p e e c hs i g n a ls p e c t r u m .T h efi n a ls t e pi st o
+extract MFMC [38] characteristics by taking the loga-
+rithmonthesumoffrequencycomponentsofthemth
+band,whichinEquation(4).
+MFMC(m) = log10
+(N−1∑
+k=0
+|X(k)|Hm(k)
+)
+;m
+= 0,1, ... ,M-1 (4)
+WhereMisthenumberoftriangularmelweightingfil-
+ters Hm(k) is the kth spectrum bin contributing to the
+mth outputbandand |X(k)|isthemagnitudespectrum.
+c. ConvolutionalNeuralNetwork
+Figure 3 shows the importance of choosing the
+proper classifier after finding speech features. In the
+current investigation, emotions use deep learning
+methods such as CNN [24]. Since these networks use
+themathematicalfunctionconvolution,theword“con-
+volutional” was coined. CNN is a DL system that uses
+emotion data as input, weights various characteristics
+of the emotion, and can distinguish between similar
+
+=== PAGE 7 ===
+1330 T. MARY LITTLE FLOWER ET AL.
+Figure 2. DemonstratesthebasicstructureofMFMC.
+Figure 3. DemonstratestheCNNarchitecture.
+emotions. The convolutional layer (CL), the pooling
+layer (PL), and the FC layer are typically the three
+components of a CNN. The input speech data in the
+input layer (IL) and the convolution layer calculate the
+output volume using the dot product between each
+fi l t e ra n dt h ee m o t i o np a t c h .T h i sl a y e rw i l la p p l y
+an element-wise activation function to the CL out-
+put. The paramount persistence of the pooling layer,
+which is periodically added to CNN [22,23,39–41], is
+to decrease the volume, which speeds up computation
+and uses less memory. The FCL uses the data from the
+layer below to compute the class scores and produce a
+1-Darraywiththesamenumberofelementsasclasses.
+d. ProposedModelofSpeechEmotionRecognition
+In the proposed model, the emotions classify to
+e x t r a c tM F C Ca n dM F M Cf e a t u r e sf r o mt h ei n p u t
+speechcorpususingthe1DCNN-MFCCand1DCNN-
+MFMCmodels,asillustratedinFigure 4.Oursuggested
+m o d e lu s e s1 DC N Na n di n v e s t i g a t e se m o t i o nc l a s s i -
+fication with and without data augmentation. The 1D
+CNN receives MFCC and MFMC features extracted
+from the speech samples. One hundred forty-four fea-
+turevectorsasinputdataforourCNN’sfirstlayer.The
+firstlayerconsistsofstride1,eightfilters,and15kernel
+sizes. ReLU activates the output after the BN to a 1D
+MaxPooling(MP)layerwithawindowsizeof1 ×2.A
+secondCLreceivestheoutputofthefirstILwith16fil-
+ters that have the same kernel size as the first layer and
+t h es a m es t r i d ea st h efi r s tC L .R e L Ua c t i v a t e st h eo u t -
+put after the BN is applied, and the output to a 1D MP
+layer with a window size 1×2. The third CL receives
+the output from the second CL and contains 32 filters
+withthesamesizeandstride.A1DMPlayerofthesame
+size receives the output after ReLU activates it follow-
+ing the application of the BN. The fourth CL receives
+the output from the third CL and contains sixty-two
+filterswithidenticalsizesandstrides.Afterapplyingthe
+0.3 dropout rate of the fourth CL and the 120 units of
+theFClayer,thereisanother20%dropoutratewiththe
+sevenunitsoftheFC2layer.ReLUactivatestheBNout-
+put to a one-dimensional MP layer of the same size.
+Depending on the number of anticipated classes, the
+output layer in the last stage uses a Softmax activation
+function.
+e. ModelTraining
+After acquiring the subset of features, the investi-
+gation calculates the emotion recognition accuracy by
+trainingthemodelwith60%ofthedata,20%fortesting,
+and the remaining 20% for validation. The augmented
+dataset to train models 1D-CNN (MFCC) and 1D-
+CNN(MFMC).TheSERframeworkforDLthroughout
+theentireprocedure.Thetwomodelsweretrainedsep-
+arately for 100 epochs each. The best outcomes for the
+twomodelsarewhenoptimalweightstodataaugmen-
+tation.
+4. Results and discussion
+a. Confusion matrix for 1D CNN-MFCC without
+DA
+The AESDD, CAFE, EmoDB, IEMOCAP, and
+MESD datasets for emotion recognition research. The
+proposed 1D CNN-MFCC model used these datasets
+andtestedtheeffectivenessofthepredictions.Inthe1D
+CNN-MFCCmodelwithoutaugmentation,theoverall
+accuracy of every emotion classification in the confu-
+sion matrix (CM). The CM shown in Figure5 (a-e)
+classifiestheemotionofclass-wiseaccuracyatthediag-
+onal, precision values at the bottom row, and recall
+valuesateveryclass’slastcolumnoftheCM.Fromthe
+result, anger emotion is misclassified mostly as happi-
+nessanddisgust.Theemotionrecognitionrateishigher
+
+=== PAGE 8 ===
+AUTOMATIKA 1331
+Figure 4. Demonstratestheproposedmodelwithdataaugmentation.
+for happy emotions. Classifying the associated speech
+signals is challenging for neutral emotions because
+of their less noticeable characteristics, contributing to
+their lower recognition rate. Learning rate is one of
+the most essential hyperparameters. The loss function
+variesmoreslowlyasthelearningratedecreases.How-
+ever, if the learning set is too broad and far from the
+extreme value, the loss stops lowering and varies regu-
+larly at a certain point. Experiments in this study, and
+itwasdiscoveredthatthelearningrateshouldbe0.001.
+ThefiguresinFigure 5(a-e)demonstratethattheover-
+all accuracy was 82% for the AESDD dataset, 88.8%
+for the CAFE dataset, 85% for the EmoDB dataset,
+78.9% for the IEMOCAP dataset, and 85.5% for the
+MESD dataset as the emotion recognition for the 1D
+CNN-MFCCmodelwithoutDAforSER.
+b. Confusionmatrixfor1D-CNN-MFCCwithDA
+Theproposed1DCNN-MFCCmodelwithDAused
+the six datasets mentioned above and tested the effi-
+ciencyofthepredictions.Inthe1DCNN-MFCCmodel
+withDA,theoverallaccuracyofemotionclassification
+is shown in the CM. The emotion recognition rate is
+higher for boredom, surprise, and neutral emotions.
+Theangryemotionismisclassifiedashappyduetothe
+less observable features. The CM displayed in Figure
+6 (a-e) classifies the emotion, and the overall accuracy
+was95.2%fortheAESDDdataset,98.6%fortheCAFE
+dataset, 96.1% for the EmoDB dataset, 91.2% for the
+IEMOCAPdataset,and96.1%fortheMESDdatasetas
+theemotionrecognitionforthe1DCNN-MFCCmodel
+withDAforSER.
+c. Confusion Matrix for 1D-CNN – MFMC with-
+outDA
+The proposed 1D CNN-MFMC model without DA
+uses all six datasets and tests the effectiveness of the
+predictions. In the 1D CNN-MFMC model without
+DA, the accuracy of every emotion classification is
+demonstrated in the confusion matrix (CM). The sad
+e m o t i o ni sm i s c l a s s i fi e da sah a p p ye m o t i o nd u et o
+the similarity of features. The CM shown in Figure7
+(a-e) classifies the emotion, and the overall accuracy
+was 95% for the AESDD test dataset, 93.6% for the
+CAFE test dataset, 86.9% for the EmoDB test dataset,
+87.5%fortheIEMOCAPtestdatasetand94.2%forthe
+M E S Dt e s td a t a s e ta st h ee m o t i o nr e c o g n i t i o nf o rt h e
+1DCNN-MFMCmodelwithoutDAforSER.
+c. ConfusionMatrixfor1D-CNN-MFMCwithDA
+The AESDD, CAFE, and MESD datasets were used
+in all six databases for emotion recognition. The pro-
+posed 1D-CNN-MFMC model with DA used these
+datasets and tested the efficiency of the predictions. In
+the1D-CNN-MFCCmodelwithDA,theoverallaccu-
+racy of every emotion classification was demonstrated
+in the confusion matrix (CM). The result shows that
+most emotions are correctly predicted and have a rea-
+sonable emotion recognition rate using data augmen-
+tation and MFMC features. The CM shown in Figure
+8 (a-e) classifies the emotion of class-wise accuracy,
+and the overall accuracy was 97.8% for the AESDD
+testdataset,99.5%fortheCAFEtestdataset,97.2%for
+the EmoDB test dataset, 92.4% for the IEMOCAP test
+datasetand96.9%fortheMESDtestdatasetastheemo-
+tion recognition for the 1D CNN-MFMC model with
+DA for SER.
+e. Comparative Analysis of the Three Models with
+OtherStudies
+Table 2 compares the accuracy of speech emo-
+tion recognition of our proposed model with that of
+existing models. The accuracy of 1D-CNN (MFCC)
+and 1D-CNN (MFMC) models without and with data
+
+=== PAGE 9 ===
+1332 T. MARY LITTLE FLOWER ET AL.
+Figure 5. (a)CMfor1DCNN-MFCCwithoutDAforthedatabaseAESDD,(b)CAFÉ,and(c)EmoDB,(d)IEMOCAP,and(e)MESDfor30
+coeﬃcients.
+
+=== PAGE 10 ===
+AUTOMATIKA 1333
+Figure 6. ( a )C Mf o r1 DC N N - M F C Cw i t hD Af o rt h ed a t a b a s eA E S D D( b )C A F É ,( c )E m o D B ,( d )I E M O C A P ,a n d( e )M E S Dw i t h3 0
+coeﬃcients.
+
+=== PAGE 11 ===
+1334 T. MARY LITTLE FLOWER ET AL.
+Figure 7. (a) CM for 1D CNN-MFMC without DA for the database AESDD (b) CAFÉ, (c) EmoDB, (d) IEMOCAP, and (e) MESD with 30
+coeﬃcients.
+
+=== PAGE 12 ===
+AUTOMATIKA 1335
+Figure 8. (a) CM for 1D CNN-MFMC with DA for the database AESDD (b) CAFÉ, (c) EmoDB, (d) IEMOCAP, and (e) MESD with 30
+coeﬃcients.
+
+=== PAGE 13 ===
+1336 T. MARY LITTLE FLOWER ET AL.
+Table 2. ComparestheSERofourproposedmodelstothatoftheexistingmodels.
+Database Reference Accuracy(%) Database Reference Accuracy(%)
+Emo-DB [ 11] 85.97 CAFÉ [ 11] 70.61
+[42] 89.00 [ 42] 70.70
+[35] 73.46 [ 35] 47.01
+[36] 81.87 [ 36] 63.57
+[32] 91.25 proposed 99 .50
+[22] 94.20 IEMOCAP [ 32] 72.02
+[3] 86.10 [ 23] 81.10
+[12] 88.00 [ 3] 64.30
+[13] 96.70 [ 24] 70.51
+[20] 94.52 [ 22] 63.80
+[24] 88.56 [ 39] 68.96
+[7] 93.4 [ 21] 70.50
+[40] 77.8 [ 16] 76.39
+proposed 97 .50 [18] 77.54
+AESDD [ 33] 87.10 [ 19] 61.70
+[10] 68.00 proposed 92 .40
+[40] 70.00 MESD [ 27] 88.90
+proposed 99 .20 [26] 93.90
+proposed 96 .90
+Table 3. ComparativeAnalysisoftheﬁvemodels’accuracies.
+Accuracy(%)
+1D-CNN–MFCC 1D-CNN–MFMC
+Database Coeﬃcient withoutDA withDA withoutDA withDA
+AESDD 12 80 97.4 90 98
+24 89 97 .89 6 9 9 .2
+30 82 95.2 95 97.8
+CAFE 12 85.6 94.3 92.5 96.7
+24 88.2 96.6 93 97.5
+30 88.89 8 .69 3 .69 9 .5
+EmoDB 12 85 93.5 90.7 96.64
+24 86 96 .89 0 .79 7 .5
+30 85 96.1 86.9 97.2
+IEMOCAP 12 77.6 88 84.2 92
+24 80.9 89.7 82.2 90.8
+30 78.9 91.28 7 .59 2 .4
+MESD 12 82.7 91.4 90.2 91.67
+24 82.7 95.6 91.3 96.4
+30 85.59 6 .19 4 .29 6 .9
+augmentation is given in Table3. The proposed 1D-
+CNN(MFCC)accuracyanalysiswithandwithoutDA.
+The five datasets were used to assess the efficiency of
+each model, and 12, 24, and 30 coefficients were used
+for testing on all five data sets. The model data is
+trained 60%, 20% for testing, and 20% for validation.
+After training of 100 epochs, the 1D-CNN (MFCC)
+model is tested without and with data augmentation,
+producing 89% and 97.8% accuracy for the AESDD
+test dataset, 88.8% and 98.6% accuracy for the CAFÉ
+test dataset, 86% and 96.8% accuracy for the EmoDB
+test dataset, 80.9% and 91.2% accuracy for the IEMO-
+CAPtestdataset,and85.5%and96.1%accuracyforthe
+MESD test dataset. The effectiveness of the 1D-CNN
+(MFMC) model is shown in Table3 with and with-
+o u tt h eu s eo fD Aa c r o s sa l lo ft h ee m p l o y e dd a t a s e t s .
+The five datasets were used to calculate the SER effec-
+tiveness of each model, and 12, 24, and 30 coefficients
+wereusedfortestingonallfivedatasets.Aftertraining
+of 100 epochs, the 1D-CNN (MFMC) model is tested
+without and with data augmentation, producing 96%
+and 99.2% accuracy for the AESDD test dataset, 93.6%
+and 99.5% accuracy for the CAFÉ test dataset, 90.7%
+and97.5%accuracyfortheEmoDBtestdataset,87.5%
+and92.4%accuracyfortheIEMOCAPtestdataset,and
+94.2% and 96.9% accuracy for the MESD test dataset.
+The 1D-CNN (MFMC) model shows enhanced accu-
+racyforthedatasetswithDAcomparedtothe1D-CNN
+(MFMC)model.
+5. Conclusions
+I nt h i sr e s e a r c hw o r k ,t h et w op r o p o s e dm o d e l s ,1 D -
+CNN-MFCC and 1D-CNN-MFMC, are utilized to
+investigate speech emotion recognition accuracy for
+the five databases with data augmentation. The 1D-
+CNN(MFMC)modelwithDAperformedbetteraccu-
+racy for recognizing emotion in all the five bench-
+mark databases AESDD, CAFÉ, EmoDB, IEMOCAP,
+and MESD with an average model accuracy of emo-
+tion recognition for AESDD at 99.2%, CAFÉ at 99.5%,
+EmoDB at 97.5%, IEMOCAP at 92.4%, and MESD
+96.9%.Infuturework,differentfeatureextractiontech-
+niqueswillbeusedtoclassifyemotionsusingaugmen-
+tationtechniques.
+
+=== PAGE 14 ===
+AUTOMATIKA 1337
+Disclosure statement
+Nopotentialconflictofinterestwasreportedbytheauthor(s).
+ORCID
+Thomas Mary Little Flower http://orcid.org/0000-0002-
+1163-3626
+Sreedharan Christopher Ezhil Singh http://orcid.org/0000-
+0002-3162-3847
+References
+[1] Uddin MZ, Nilsson EG. Emotion recognition using
+speechandneuralstructuredlearningtofacilitateedge
+intelligence. Eng Appl Artif Intel.Sep 2020;94:103775.
+doi:10.1016/j.engappai.2020.103775
+[2] WaniTM,GunawanTS,AhmadQadriSA,etal.Speech
+emotionrecognitionusingconvolutionneuralnetworks
+and deep stride convolutional neural networks. 2020
+6thInternationalConferenceonWirelessandTelemat-
+ics (ICWT), Yogyakarta, Indonesia; Sep 2020. pp. 1–6.
+doi:10.1109/ICWT50448.2020.9243622.
+[3] Issa D, Demirci MF, Yazici A. Speech emotion recogni-
+tion with deep convolutional neural networks. Biomed
+Signal Proces.May2020;59:101894.doi:10.1016/j.bspc.
+2020.101894
+[4] Singh YB, Goel S. 1D CNN based approach for speech
+emotion recognition using MFCC features, Artificial
+Intelligence and Speech Technology. in Proc. 2nd
+International Conference on Artificial Intelligence and
+Speech Technology, (AIST2020), Delhi, India; Chapter
+38,June2020,pp.1–8.doi: 10.1201/9781003150664.
+[5] Ajibola Alim S, Khair Alang Rashid N. Some com-
+monly used speech feature extraction algorithms.
+From Nat Artif Intel Algorithms App. Dec 2018.
+doi:10.5772/intechopen.80419
+[ 6 ]R a v iV ,W a n gJ ,F l i n tJ ,e ta l .F r a u g :af r a m er a t eb a s e d
+data augmentation method for depression detection
+fromspeechsignals.ICASSP2022-2022IEEEInterna-
+tionalConferenceonAcoustics,SpeechandSignalPro-
+cessing (ICASSP), Singapore, Singapore; Apr 2022. pp.
+6267–6271.doi:10.1109/ICASSP43922.2022.9746307.
+[7] Al-onazi BB, Nauman MA, Jahangir R, et al. Transfor
+mer-based multilingual speech emotion recognition
+using data augmentation and feature fusion. Appl Sci.
+Sep2022;12(18):9188.doi:10.3390/app12189188
+[8] BadrY,MukherjeeP,ThumatiS.Speechemotionrecog-
+nition using MFCC and hybrid neural networks. In
+Proceedings of the 13th International Joint Conference
+on Computational Intelligence (IJCCI 2021); Jan 2021,
+pp.366–373.doi: 10.5220/0010707400003063.
+[9] Jothimani S, Premalatha K. MFF-SAug: multi fea-
+ture fusion with spectrogram augmentation of speech
+emotion recognition using convolution neural net-
+work. Chaos, Solitons Fractals.Sep 2022;162:112512.
+doi:10.1016/j.chaos.2022.112512
+[10] Vryzas N, Vrysis L, Matsiola M, et al. Continuous
+speech emotion recognition with convolutional neural
+networks. J Audio Eng Soc.Feb 2020;68(1/2):14–24.
+doi:10.17743/jaes.2019.0043
+[11] SeknedyME,FawziS.Speechemotionrecognitionsys-
+tem for human interaction applications. 2021 Tenth
+InternationalConferenceonIntelligentComputingand
+Information Systems(ICICIS),Cairo,Egypt;Dec2021,
+pp.361–368.doi: 10.1109/ICICIS52592.2021.9694246.
+[12] Pan S-T, Wu H-J. Performance improvement of speech
+emotion recognition systems by combining 1D CNN
+and LSTM with data augmentation. Electronics.2023;
+12(11):2436.doi:10.3390/electronics12112436
+[13] Jahangir R, Teh YW, Mujtaba G, et al. Convo-
+lutional neural network-based cross-corpus speech
+emotion recognition with data augmentation and
+features fusion. Mach Vision A. Mar 2022;33(3).
+doi:10.1007/s00138-022-01294-x
+[14] Chatziagapi A, Paraskevopoulos G, Sgouropoulos D,
+et al. Data augmentation using GANs for speech emo-
+tion recognition. Proc. Interspeech 2019; Sep 2019, pp.
+171–175.doi:10.21437/Interspeech.2019-2561.
+[ 1 5 ]B a u t i s t aJ L ,L e eY K ,S h i nH S .S p e e c he m o t i o nr e c o g -
+nition based on parallel CNN-attention networks with
+multi-folddataaugmentation.Electronics;11(23):3935.
+doi:10.3390/electronics11233935
+[16] Atmaja BT, Sasou A. Effects of data augmentations on
+speechemotionrecognition.Sensors. Aug2022;22(16):
+5941.doi:10.3390/s22165941
+[ 1 7 ]V r y z a sN ,L i a t s o uA ,K o t s a k i sR ,e ta l .A u g m e n t -
+ing drama: a speech emotion-controlled stage light-
+ing framework. In Proceedings of the 12th Interna-
+tional Audio Mostly Conference on Augmented and
+ParticipatorySoundandMusicExperiences;Aug2017,
+p. 8.
+[18] Xu M, Zhang F, Cui X, et al. Speech emotion recog-
+nition with multiscale area attention and data aug-
+mentation. ICASSP 2021 - 2021 IEEE International
+Conference on Acoustics, Speech and Signal Pro-
+cessing (ICASSP), Toronto, ON, Canada; June 2021,
+pp. 6319–6323. doi: 10.1109/ICASSP39728.2021.941
+4635.
+[19] EtienneC, Fidanza G,PetrovskiiA, etal. CNN+LSTM
+architecture for speech emotion recognition with data
+augmentation. Proc. Workshop on Speech, Music and
+Mind (SMM 2018), Sep 2018, pp. 21–25. doi:10.21437/
+SMM.2018-5.
+[20] Ahmed MR, Islam S, Muzahidul Islam AKM, et al. An
+ensemble 1D-CNN-LSTM-GRU model with data aug-
+mentation for speech emotion recognition. Expert Syst
+Appl. May 2023;218:119633. doi:10.1016/j.eswa.2023.
+119633
+[21] Xu Y, Xu H, Zou J. HGFM : a hierarchical grained
+and feature model for acoustic emotion recogni-
+tion. ICASSP 2020 - 2020 IEEE International Con-
+ference on Acoustics, Speech and Signal Process-
+ing (ICASSP), Barcelona, Spain; 2020, pp. 6499–6503.
+doi:10.1109/ICASSP40776.2020.9053039.
+[22] Su B-H, Chang C-M, Lin Y-S, et al. Improving
+speech emotion recognition using graph attentive Bi-
+directional gated recurrent unit network. INTER-
+SPEECH.2020.do i:10.21437/Interspeech.2020-1733
+[23] Pawar MD, Kokate RD. Convolution neural network
+basedautomaticspeechemotionrecognitionusingMel-
+frequency Cepstrum coefficients. Mul Timed Tools
+Appl. Feb 2021;80:15563–15587. doi:10.1007/s11042-
+020-10329-2
+[24] Chen Z, Li J, Liu H, et al. Learning multi-scale features
+f o rs p e e c he m o t i o nr e c o g n i t i o nw i t hc o n n e c t i o na t t e n -
+tion mechanism. Expert Syst Appl.2023;214:118943.
+doi:10.1016/j.eswa.2022.118943
+[25] Duville MM, Alonso-Valerdi LM, Ibarra-Zarate DI.
+Neuronalandbehavioralaffectiveperceptionsofhuman
+and naturalness-reduced emotional prosodies. Front
+Comput Neurosc.Nov 2022;16:1022787. doi:10.3389/
+fncom.2022.1022787
+
+=== PAGE 15 ===
+1338 T. MARY LITTLE FLOWER ET AL.
+[26] DuvilleMM,Alonso-ValerdiLM,Ibarra-ZarateDI.The
+Mexican Emotional Speech Database (MESD): elab-
+oration and assessment based on machine learning.
+202143rdAnnualInternationalConferenceoftheIEEE
+Engineering in Medicine & Biology Society (EMBC),
+Mexico; Dec 2021, pp. 1644–1647, doi:10.1109/EMBC
+46164.2021.9629934.
+[27] Duville MM, Alonso-Valerdi LM, Ibarra-Zarate DI.
+Mexican emotional speech database based on seman-
+tic, frequency, familiarity, concreteness, and cultural
+shaping of affective prosody. Data.Dec.2021;6(12):130.
+doi:10.3390/data6120130
+[ 2 8 ]G o u r n a yP ,L a h a i eO ,L e f e b v r eR .AC a n a d i a nF r e n c h
+EmotionalSpeechDataset.(1.1)[Dataset].ACMMulti-
+mediaSystemsConference(MMSys2018)(MMSys’18),
+Amsterdam, Netherlands. Zenodo, June 2018. doi:10.
+5281/zenodo.1478765.
+[29] Vrysas N, Kotsakis R, Liatsou A, et al. Speech emotion
+recognition for performance interaction. J Audio Eng
+Soc. June 2018;66(6):457–467. doi:10.17743/jaes.2018.
+0036
+[30] Vryzas N, Vrysis L, Kotsakis R, et al. Speech emotion
+recognition adapted to multimodal semantic reposito-
+ries. In 2018 13th International Workshop on Seman-
+tic and Social Media Adaptation and Personalization
+(SMAP),IEEE;Sep2018,pp.31–35.
+[31] Vryzas N, Matsiola M, Kotsakis R, et al. Subjective
+evaluation of a speech emotion recognition interac-
+tion framework. In Proc. of the Audio Mostly 2018 on
+Sound in Immersion and Emotion, ACM; Sep 2018,
+p.34.
+[32] XuX,LiD,ZhouY,etal.Multi-typefeaturesseparating
+fusion learning for speech emotion recognition. Appl
+Soft Comput. 2022;130:109648. doi: 10.1016/j.asoc.
+2022.109648
+[33] Pham NT, Nguyen SD, Thuy Nguyen VS, et al. Speech
+emotion recognition using overlapping sliding window
+andshapleyadditiveexplainabledeepneuralnetwork.J
+Inf Telecommun. doi:10.1080/24751839.2023.2187278
+[34] Busso C, Bulut M, Lee CC, et al. IEMOCAP: interac-
+tive emotional dyadic motion capture database. J Lang
+Resour Eval. Dec 2008;42(4):335–359. doi:10.1007/
+s10579-008-9076-6
+[35] Ng AJB, Liu K-H. The investigation of different loss
+functions with capsule networks for speech emo-
+tion recognition. Sci Program. 2021;2021:Article ID
+9916915.doi:10.1155/2021/9916915
+[36] López-Gil J-M, Garay-Vitoria N. Assessing the effec-
+t i v e n e s so fe n s e m b l e si ns p e e c he m o t i o nr e c o g n i -
+tion:performanceanalysisunderchallengingscenarios.
+Expert Syst Appl.2024;243:122905. doi:10.1016/j.eswa.
+2023.122905
+[37] Burkhardt F, Paeschke A. A database of German emo-
+tional speech. Interspeech.2005;5:1517–1520. doi:10.
+21437/Interspeech.2005-446
+[38] Yalamanchili B, Samayamantula SK, Anne KR. Neural
+network-based blended ensemble learning for speech
+emotion recognition. Multidim Syst Sign Process.Aug
+2022;33:1323–1348.doi:10.1007/s11045-022-00845-9
+[39] Liu S, Zhang M, Fang M, et al. Chih-Cheng Hung
+speech emotion recognition based on transfer learn-
+i n gf r o mt h eF a c e N e tf r a m e w o r k .JA c o u s tS o cA m .
+2021;149:1338–1345.doi:10.1121/10.0003530
+[40] Pentari A, Kafentzis G, Tsiknakis M. Speech emotion
+recognition via graph-based representations. Sci Rep.
+2024;14:4484.doi:10.1038/s41598-024-52989-2
+[41] Saleem N, Gao J, Irfan R, et al. DeepCNN: spectro-
+temporal feature representation for speech emotion
+recognition. CAAI Trans Intel Technol.2023;8:401–
+417.https://doi.org/10.1049/cit2.12233.
+[42] Agarla M, Bianco S, Celona L, et al. Semi-supervised
+cross-lingual speech emotion recognition. Expert Syst
+Appl. 2024;237(Part A):121368. doi: 10.1016/j.eswa.
+2023.121368
+
