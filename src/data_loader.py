@@ -116,42 +116,84 @@ def build_cafe_metadata():
 
 
 def build_aesdd_metadata(subset_500=True):
+    """
+    Build AESDD metadata table strictly aligned with the paper's specification:
+    (5 actors x 5 emotions x 20 utterances) = 500 clips (100 per emotion).
+
+    Canonical Structure:
+    - 5 emotions: anger, disgust, fear, happiness, sadness.
+    - 20 sentences: 01 to 20.
+    - Core actors: 1, 2, 3, 4, 5.
+    - Official release omissions / corruption:
+      * disgust sentence 18 (actor 5 unrecorded) -> substitute take d18 (6)
+      * fear sentence 02 (actor 4 unrecorded) -> substitute take f02 (6)
+      * happiness sentence 11 (actor 3 unrecorded) -> substitute take h11 (6)
+      * sadness sentence 05 (actor 3 corrupted 36-byte file) -> substitute take s05 (6)
+    """
     aesdd_dir = RAW_DIR / "aesdd"
     files = sorted(aesdd_dir.rglob("*.wav"))
-    rows = []
+    
+    records_by_emo = {emo: {} for emo in ["anger", "disgust", "fear", "happiness", "sadness"]}
+    
     for f in files:
         if f.stat().st_size < 1000:
-            # Skip empty or corrupted recordings (e.g. s05 (3).wav is 36 bytes in official release)
+            # Skip corrupted 36-byte s05 (3).wav
             continue
-        emo = f.parent.name
-        name = f.stem  # e.g. "a01 (1)" or "a06 (5)b"
-        m = re.match(r'([a-z])(\d+)\s*\((.*?)\)', name)
+        emo = f.parent.name.lower()
+        if emo not in records_by_emo:
+            continue
+            
+        m = re.match(r'^([a-z])(\d{2})\s*\((0?1|[2-6])\)(.*)$', f.stem)
         if not m:
             continue
-        code, sent_idx_str, actor = m.groups()
-        if actor == "01":
-            actor = "1"
-
-        try:
-            dur = round(len(load_audio_clip(f)) / SR, 3)
-        except Exception:
+        code, sent_str, actor_str, suffix = m.groups()
+        sent = int(sent_str)
+        actor = int(actor_str)
+        if not (1 <= sent <= 20):
             continue
-
-        rows.append({
+            
+        dur = round(len(load_audio_clip(f)) / SR, 3)
+        row = {
             "dataset": "aesdd",
-            "clip_id": name,
+            "clip_id": f.stem,
             "filename": f.name,
             "rel_path": str(f.relative_to(ROOT_DIR)).replace("\\", "/"),
-            "speaker_id": actor,
+            "speaker_id": str(actor),
+            "sentence": sent,
             "gender": "unknown",
             "language": "Greek",
             "emotion": emo,
             "duration_s": dur
-        })
-    df = pd.DataFrame(rows)
-    # If subset_500, take exactly 100 per emotion to match the paper's N=500 exactly
+        }
+        
+        key = (sent, actor)
+        if actor in [1, 2, 3, 4, 5]:
+            if key not in records_by_emo[emo] or suffix.strip() == 'a':
+                records_by_emo[emo][key] = row
+        else:
+            # Actor 6 recorded for fallback
+            records_by_emo[emo][key] = row
+
+    selected_rows = []
+    for emo in ["anger", "disgust", "fear", "happiness", "sadness"]:
+        emo_dict = records_by_emo[emo]
+        emo_selected = []
+        for s in range(1, 21):
+            for spk in range(1, 6):
+                if (s, spk) in emo_dict:
+                    emo_selected.append(emo_dict[(s, spk)])
+                elif (s, 6) in emo_dict:
+                    emo_selected.append(emo_dict[(s, 6)])
+        if subset_500:
+            assert len(emo_selected) == 100, f"AESDD {emo} has {len(emo_selected)} clips instead of 100!"
+        selected_rows.extend(emo_selected)
+
+    df = pd.DataFrame(selected_rows)
     if subset_500:
-        df = df.groupby("emotion", group_keys=False).head(100).reset_index(drop=True)
+        assert len(df) == 500, f"AESDD total clips is {len(df)} instead of 500!"
+        for emo, count in df["emotion"].value_counts().items():
+            assert count == 100, f"AESDD {emo} has {count} clips instead of 100!"
+
     emotions = sorted(df["emotion"].unique())
     emo_to_label = {e: i for i, e in enumerate(emotions)}
     df["label"] = df["emotion"].map(emo_to_label)

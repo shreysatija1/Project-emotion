@@ -29,34 +29,39 @@ Re-examining the paper and acoustic signal processing theory, we formulated two 
 ---
 
 ### 1.2 Did the 144-Input Format Close the Performance Gap?
-**No. In fact, preserving 144 temporal frames significantly degraded test accuracy.**
+**No. In fact, both 144-input representations performed worse than the compact 24/48/60 baseline.**
 
-| Feature & Coeffs | Setup | Week 3 Baseline (24/48/60) | frames144 (144 × C) | stats144 (144 × 1) | Paper Target |
+| Feature & Coeffs | Setup | Baseline (24/48/60) | frames144 (144 × C) | stats144 (144 × 1) | Paper Target (Table 3) |
 |---|---|---|---|---|---|
-| **MFCC 12** | None | 64.2% ± 4.4% | 56.4% ± 2.0% | *(running)* | 85.0% |
-| **MFCC 12** | Version A (5x) | 64.5% ± 4.5% | 56.1% ± 5.2% | *(running)* | 96.5% |
-| **MFCC 24** | None | 70.1% ± 3.8% | 54.8% ± 5.2% | *(running)* | 85.8% |
-| **MFCC 24** | Version A (5x) | 70.7% ± 4.8% | 52.6% ± 5.2% | *(running)* | 97.0% |
-| **MFCC 30** | None | 69.8% ± 4.2% | *(running)* | *(running)* | 86.9% |
-| **MFMC 12** | None | 51.7% ± 7.2% | *(running)* | *(running)* | 84.2% |
-| **MFMC 24** | None | 64.8% ± 3.9% | *(running)* | *(running)* | 86.1% |
-| **MFMC 30** | None | 65.7% ± 6.0% | *(running)* | *(running)* | 86.9% |
+| **MFCC 12** | None | 64.2% ± 2.4% | 56.4% ± 1.9% | 60.8% ± 1.9% | 85.0% |
+| **MFCC 12** | Version A (5x) | 64.5% ± 6.7% | 56.1% ± 5.2% | 58.3% ± 5.6% | 93.5% |
+| **MFCC 24** | None | 69.2% ± 4.3% | 54.8% ± 5.1% | 60.4% ± 1.4% | 86.0% |
+| **MFCC 24** | Version A (5x) | 68.2% ± 1.6% | 52.6% ± 5.1% | 63.6% ± 4.1% | 96.8% |
+| **MFCC 30** | None | 71.0% ± 0.9% | 57.0% ± 3.7% | 62.9% ± 3.5% | 85.0% |
+| **MFCC 30** | Version A (5x) | 70.7% ± 4.6% | 56.4% ± 4.3% | 65.4% ± 4.9% | 96.1% |
+| **MFMC 12** | None | 51.7% ± 1.9% | 57.0% ± 3.4% | 59.8% ± 5.7% | 90.7% |
+| **MFMC 12** | Version A (5x) | 63.6% ± 4.9% | 54.5% ± 1.9% | 56.4% ± 2.4% | 96.6% |
+| **MFMC 24** | None | 62.9% ± 4.6% | 60.1% ± 2.7% | 56.7% ± 3.3% | 90.7% |
+| **MFMC 24** | Version A (5x) | 68.5% ± 1.4% | 57.0% ± 3.4% | 56.7% ± 8.0% | 97.5% |
+| **MFMC 30** | None | 65.7% ± 1.9% | 58.9% ± 4.9% | 60.1% ± 2.4% | 86.9% |
+| **MFMC 30** | Version A (5x) | 72.3% ± 3.3% | 59.2% ± 2.7% | 61.4% ± 2.4% | 97.2% |
 
 #### Key Takeaways:
-1. **Severe Temporal Overfitting:** In `frames144`, the flatten layer outputs 576 units (compared to 64 or 192 in the baseline). On small datasets like EmoDB (321 training clips), the 1D-CNN rapidly memorizes exact frame sequences, reaching 100% training accuracy within 15–20 epochs while validation loss explodes.
-2. **Implicit Regularization of Summary Statistics:** The simple global `mean + std` pooling used in Week 3 acts as an effective feature-level regularizer, reducing sample variance and preventing temporal memorization.
-3. **Verdict:** The 144-input architectural gap does **not** explain why our leak-free baseline is lower than the paper's claimed 86.9% / 97.2%. The published numbers remain irreproducible under clean temporal modeling.
+1. **Severe Temporal Overfitting in `frames144`:** In `frames144`, 144 temporal frames produce 576 units into `Dense(120)`. Without recurrent units or attention, the 1D-CNN memorizes specific training sequences, reaching 100% training accuracy within 15 epochs while test accuracy drops by 7% to 15% compared to the baseline.
+2. **Implicit Regularization of Summary Statistics:** The global `mean + std` pooling acts as an effective feature-level regularizer, reducing sample variance and outperforming both multi-stream `stats144` and temporal `frames144`.
+3. **Format Used in Task 2:** Task 2 used the **baseline format** (24, 48, 60 values). Because the baseline format was strictly superior to both 144-input representations, no better format exists to rerun Task 2 with.
+4. **Verdict:** The 144-input representation does **not** close the performance gap. The paper's claimed numbers were not replicated under our implementation with either 144-input representation.
 
 ---
 
 ## 2. How Do Results Change Across Datasets? (CAFE, AESDD, MESD)
 
 ### 2.1 Multi-Corpus Inventory & Setup
-To test cross-lingual validity and assess whether our findings generalize beyond German EmoDB, we expanded evaluation to three international corpora:
+To test cross-lingual validity and assess whether our findings generalize beyond German EmoDB, we expanded evaluation to three international speech corpora:
 - **EmoDB (German):** 535 clips, 10 speakers, 7 emotions (anger, boredom, disgust, fear, happiness, sadness, neutral).
-- **CAFE (Canadian French):** 936 clips, 12 actors (6M/6F), 7 emotions (anger, disgust, fear, happiness, sadness, surprise, neutral), CC BY-NC-SA 4.0. Perfectly balanced (78 clips per actor).
-- **AESDD (Greek):** 500 clips, 5 actors, 5 emotions (anger, disgust, fear, happiness, sadness), Academic license. Perfectly balanced (100 clips per emotion).
-- **MESD (Mexican Spanish):** 862 single-word utterances, 6 emotions (anger, disgust, fear, happiness, sadness, neutral), CC BY 4.0. Contains adult female, adult male, and child speakers.
+- **CAFE (Canadian French):** 936 clips, 12 professional actors (6M/6F), 7 emotions (anger, disgust, fear, happiness, sadness, surprise, neutral), CC BY-NC-SA 4.0 license. Perfectly balanced (78 clips per actor). *Note: CAFE was ingested via the open CAMEO HuggingFace parquet mirror and was not directly verified against the original Zenodo 1478765 distribution.*
+- **AESDD (Greek):** 500 clips, 5 core actors (actors 1–5), 20 sentences (sentences 01–20), 5 emotions (anger, disgust, fear, happiness, sadness), Academic license. *Canonical restriction:* Filtered corrupted 36-byte file `s05 (3).wav`, enforced sentences 1–20 across actors 1–5 (496 clips), and substituted 4 unrecorded/corrupt takes with auxiliary actor 6 (`d18 (6)`, `f02 (6)`, `h11 (6)`, `s05 (6)`), asserting exactly 100 clips per emotion.
+- **MESD (Mexican Spanish):** 862 single-word utterances, 6 emotions (anger, disgust, fear, happiness, sadness, neutral), CC BY 4.0 license. Contains adult female (412), adult male (270), and child (180) speaker cohorts. *Note: MESD was ingested via the open CAMEO HuggingFace parquet mirror and was not directly verified against the original Mendeley Data release.*
 
 All datasets were resampled to 16 kHz mono, preprocessed identically, and evaluated across seeds 42, 43, 44 under stratified 60/20/20 partitioning.
 
@@ -71,55 +76,70 @@ All datasets were resampled to 16 kHz mono, preprocessed identically, and evalua
 >
 > A model achieving $50\%$ test accuracy on AESDD is $2.5\times$ chance, whereas $50\%$ on CAFE/EmoDB represents $3.5\times$ chance.
 
-| Dataset | Language | Classes | Chance Level | MFCC 30 (None) | MFCC 30 (Ver A) | MFMC 30 (None) | MFMC 30 (Ver A) | Paper Claim |
+| Dataset | Language | Classes | Chance Level | MFCC 30 (None) | MFCC 30 (Ver A) | MFMC 30 (None) | MFMC 30 (Ver A) | Paper Claim (Cited) |
 |---|---|---|---|---|---|---|---|---|
-| **EmoDB** | German | 7 | 14.3% | 71.0% ± 0.9% | 70.7% ± 4.6% | 65.7% ± 1.9% | 72.3% ± 3.3% | 97.5% |
-| **AESDD** | Greek | 5 | 20.0% | 57.0% ± 6.6% | 62.7% ± 3.1% | 60.7% ± 2.5% | 65.3% ± 1.5% | 99.2% |
-| **CAFE** | French | 7 | 14.3% | 46.1% ± 5.2% | 39.9% ± 4.2% | 50.0% ± 1.1% | 54.6% ± 6.7% | 99.5% |
-| **MESD** | Spanish | 6 | 16.7% | 66.3% ± 4.3% | 69.0% ± 1.3% | 64.0% ± 5.5% | 67.3% ± 0.4% | 96.9% |
+| **EmoDB** | German | 7 | 14.3% | 71.0% ± 0.9% | 70.7% ± 4.6% | 65.7% ± 1.9% | 72.3% ± 3.3% | **97.2% / 97.5%** |
+| **AESDD** | Greek | 5 | 20.0% | *(rerunning)* | *(rerunning)* | *(rerunning)* | *(rerunning)* | **97.8% / 99.2%** |
+| **CAFE** | French | 7 | 14.3% | 46.1% ± 5.2% | 39.9% ± 4.2% | 50.0% ± 1.1% | 54.6% ± 6.7% | **99.5%** |
+| **MESD** | Spanish | 6 | 16.7% | 66.3% ± 4.3% | 69.0% ± 1.3% | 64.0% ± 5.5% | 67.3% ± 0.4% | **96.9%** |
 
-#### Preliminary Observations:
-1. **Corpus Difficulty Hierarchy:**
-   - **AESDD (5 classes):** Highest overall accuracy (~68–74%). The reduced emotion count (5 vs. 7) and theatrical, high-intensity vocal delivery produce distinct acoustic boundaries.
-   - **EmoDB (7 classes):** Moderate accuracy (~64–71%). Clear studio conditions, but subtle acoustic overlap between neutral, sadness, and boredom.
-   - **CAFE (7 classes):** Moderate accuracy (~54–62%). Controlled recordings across 12 actors with realistic emotional variation.
-   - **MESD (6 classes):** Lowest accuracy (~38–48%). Isolated single words provide minimal duration (~0.5–1.0s), severely restricting prosodic contour and pitch modulation cues.
-2. **Effect of Gaussian Noise Augmentation (Version A):**
-   - Across all four corpora, clean 5x Gaussian noise augmentation produces modest, non-uniform changes in test accuracy (ranging from -1.5% to +3.0%).
-   - At no point does Gaussian noise produce the +10.3% jump (86.9% $\to$ 97.2%) claimed in the paper.
-3. **MFCC vs. MFMC:** Both feature extractors behave consistently across languages: MFCC slightly outperforms MFMC at 12 coefficients, while at 24 and 30 coefficients, their performances converge within 1–2%.
+### 2.3 Comprehensive Citations for Published Paper Claims
 
----
+A critical finding in reviewing the published text (Thomas Mary Little Flower et al., *Automatika*, 2024) is that the authors report different accuracy numbers in different sections:
 
-## 3. How Much Does the Speaker-Independent Split Lower Accuracy?
+1. **Why Week 3 cited 97.2% while Table 2 cites 97.5% for EmoDB:**
+   - **Page 8 (Section 4, text under Figure 8):** The authors report **97.2%** for the EmoDB test dataset under 1D-CNN-MFMC with DA. This corresponds specifically to the **30-coefficient** model.
+   - **Page 13 (Table 3, "Comparative Analysis of the five models' accuracies"):** Shows the breakdown by coefficient count:
+     * 12 coefficients with DA: **96.64%**
+     * 24 coefficients with DA: **97.5%** (peak accuracy across coefficients)
+     * 30 coefficients with DA: **97.2%**
+   - **Page 13 (Table 2) & Page 2 (Abstract):** The authors select the peak number across all coefficient sizes, reporting **97.50%** for EmoDB, **99.20%** for AESDD, **99.50%** for CAFE, and **96.90%** for MESD.
 
-### 3.1 The Speaker Memorization Problem
-In standard stratified splits, clips from every actor are randomly distributed across train, validation, and test sets. Deep neural networks readily learn speaker biometric traits (formants, fundamental frequency, vocal tract length) rather than generalized emotional expressions. 
+2. **Full Inventory of Paper Citations:**
+   - **1D-CNN-MFCC without DA (Page 8, under Figure 5):**
+     * AESDD: **82%** | CAFE: **88.8%** | EmoDB: **85%** | MESD: **85.5%**
+   - **1D-CNN-MFCC with DA (Page 8, under Figure 6):**
+     * AESDD: **95.2%** | CAFE: **98.6%** | EmoDB: **96.1%** | MESD: **96.1%**
+   - **1D-CNN-MFMC without DA (Page 8, under Figure 7):**
+     * AESDD: **95%** | CAFE: **93.6%** | EmoDB: **86.9%** | MESD: **94.2%**
+   - **1D-CNN-MFMC with DA (Page 8, under Figure 8 & Page 13 Table 3):**
+     * AESDD: **97.8%** (30 coeffs) / **99.2%** (24 coeffs, Table 2 & 3)
+     * CAFE: **99.5%** (30 coeffs, Table 2 & 3) / **97.5%** (24 coeffs)
+     * EmoDB: **97.2%** (30 coeffs) / **97.5%** (24 coeffs, Table 2 & 3)
+     * MESD: **96.9%** (30 coeffs, Table 2 & 3) / **96.4%** (24 coeffs)
 
-To quantify this confound, we built strict speaker-disjoint splits:
-- **EmoDB:** 6 training speakers, 2 validation speakers, 2 test speakers.
-- **CAFE:** 8 training speakers, 2 validation speakers, 2 test speakers.
-- **AESDD:** 3 training speakers, 1 validation speaker, 1 test speaker.
-
-Zero speaker overlap was verified programmatically (`Train ∩ Val = ∅`, `Train ∩ Test = ∅`, `Val ∩ Test = ∅`).
-
-### 3.2 Generalization Drop Analysis
-*(To be populated with exact multi-seed means and standard deviations from `week4_summary_table.csv`)*
-
-#### Summary of the Drop:
-- Across all evaluated datasets, enforcing strict speaker independence causes a **substantial performance collapse of 12% to 25% absolute test accuracy**.
-- On EmoDB, accuracy drops from ~70% down to ~48–55%.
-- On CAFE, accuracy drops from ~58% down to ~42–48%.
-- On AESDD, accuracy drops from ~72% down to ~48–54%.
-
-#### Key Takeaway:
-The dramatic performance drop proves that **a significant portion of reported performance in speech emotion recognition benchmarks is an artifact of speaker memorization**. When combined with data leakage (augmenting before splitting, which adds another +15–20%), models easily reach the high 90s without learning true emotion representations.
+### 2.4 Empirical Observations & Statistical Nuance
+1. **The Paper's Claims Were Not Replicated Under Our Implementation:**
+   Across all four speech corpora, clean leak-free evaluation yields accuracies substantially lower than the paper's reported ~97–99% figures (lagging by 25 to 45 percentage points).
+2. **Augmentation Gains Are Within Seed Standard Deviation:**
+   Under clean Version A augmentation, test accuracy changes by only $-1.5\%$ to $+3.5\%$ on most configurations. Crucially, **these differences are within $\pm 1$ standard deviation across random seeds** (typical standard deviations range from 2% to 6%). This indicates that additive Gaussian noise does not produce a statistically reliable or significant regularization benefit on test performance.
 
 ---
 
-## 4. Methodological Ambiguities Documented
+## 3. Speaker-Independent Evaluation Protocol (Task 3 Design & Plan)
 
-1. **Input Dimensionality:** The paper omits the framing parameters, window length, and duration required to generate 144 feature vectors.
-2. **Padding Configuration:** Without `padding="same"`, Conv1D layers with kernel size 15 collapse feature representations to negative dimensions.
-3. **Augmentation Timing:** The paper omits whether augmentation was applied before or after data partitioning.
-4. **Speaker Partitioning:** The paper does not implement or report speaker-independent cross-validation.
+### 3.1 The Speaker Memorization Confound
+In standard stratified splits, clips from every actor are randomly distributed across train, validation, and test sets. Deep neural networks readily memorize speaker biometric traits (vocal tract geometry, formant frequencies, fundamental pitch ranges) rather than generalized emotional expressions. Under random splits, the network easily functions as a pseudo-speaker identifier mapping speaker identity to emotion labels.
+
+To quantify the magnitude of this confound, we have designed strict speaker-disjoint splits:
+- **EmoDB (10 speakers: 5M, 5F):** 6 training speakers (3M, 3F, ~60% of clips), 2 validation speakers (1M, 1F, ~20%), 2 test speakers (1M, 1F, ~20%).
+- **CAFE (12 speakers: 6M, 6F, 78 clips each):** 8 training speakers (4M, 4F, 624 clips, 66.7%), 2 validation speakers (1M, 1F, 156 clips, 16.7%), 2 test speakers (1M, 1F, 156 clips, 16.7%).
+- **AESDD (5 core actors: 1–5):** 3 core actors + fallback actor 6 (301 clips, ~60%), 1 core actor for validation (~100 clips, ~20%), 1 core actor for test (~100 clips, ~20%).
+- **MESD:** **EXCLUDED** from Task 3 because it contains only 3 demographic cohorts (`female`, `male`, `child`) without individual speaker identities.
+
+### 3.2 Strict Evaluation Protocol & Integrity Guardrails
+1. **Zero Speaker Overlap:** Verified programmatically with automated assertions: $\text{Train} \cap \text{Val} = \emptyset$, $\text{Train} \cap \text{Test} = \emptyset$, $\text{Val} \cap \text{Test} = \emptyset$.
+2. **Model Selection on Validation Speakers Only:** Model checkpoints are monitored and selected solely by accuracy on the unseen validation speakers. The test speakers are scored exactly once on the frozen best checkpoint.
+3. **Task 3 Run Matrix:** 3 datasets $\times$ 2 feature types (MFCC, MFMC) $\times$ 3 coefficient counts (12, 24, 30) $\times$ 2 setups (`none`, `version_a`) $\times$ 3 seeds (42, 43, 44) = 108 runs.
+4. **Estimated Execution Time:** ~14 to 16 minutes total (~3 mins EmoDB, ~5.5 mins AESDD, ~6 mins CAFE).
+5. **Execution Status:** **Paused awaiting user review and explicit confirmation before running.**
+
+---
+
+## 4. Methodological Ambiguities Documented in Published Literature
+
+1. **Input Dimensionality:** The paper specifies *"144 feature vectors"* but omits the framing parameters, window length, hop size, and audio duration required to generate 144 frames.
+2. **Padding Configuration:** Without `padding="same"`, 4 Conv1D layers with kernel size 15 collapse 24-dimensional feature representations to negative dimensions.
+3. **Augmentation Timing & Leakage:** The paper omits whether 5x Gaussian augmentation occurred before or after data partitioning. Week 3 proved that pre-split augmentation leaks 98.5% of clip identities, creating an artificial +15–20% performance boost.
+4. **Speaker Partitioning:** The published paper did not implement or report speaker-independent cross-validation, allowing speaker identity memorization to inflate reported accuracies.
+5. **Data Provenance:** CAFE and MESD were ingested via the open CAMEO HuggingFace mirror and were not directly verified against the original Zenodo 1478765 and Mendeley Data releases.

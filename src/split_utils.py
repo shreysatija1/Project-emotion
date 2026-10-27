@@ -93,12 +93,15 @@ def make_speaker_independent_split(df, dataset_name, seed=42):
         te_spk = set([m_perm[5], f_perm[5]])
 
     elif name == "aesdd":
-        # 5 actors (1, 2, 3, 4, 5) with 100 clips each
-        actors = sorted(df["speaker_id"].unique().tolist())
-        perm = rng.permutation(actors).tolist()
+        # 5 core actors (1, 2, 3, 4, 5) with ~100 clips each; actor 6 provides 4 fallback takes
+        core_actors = sorted([s for s in df["speaker_id"].unique() if str(s) in ["1", "2", "3", "4", "5"]])
+        perm = rng.permutation(core_actors).tolist()
         
-        # 3 actors to train (60%), 1 to val (20%), 1 to test (20%)
+        # 3 core actors to train (60%), 1 to val (20%), 1 to test (20%)
+        # Fallback actor 6 is placed into train so val and test are always full core actors
         tr_spk = set(perm[:3])
+        if "6" in df["speaker_id"].unique():
+            tr_spk.add("6")
         va_spk = set([perm[3]])
         te_spk = set([perm[4]])
 
