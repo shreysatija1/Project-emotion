@@ -79,7 +79,7 @@ All datasets were resampled to 16 kHz mono, preprocessed identically, and evalua
 | Dataset | Language | Classes | Chance Level | MFCC 30 (None) | MFCC 30 (Ver A) | MFMC 30 (None) | MFMC 30 (Ver A) | Paper Claim (Cited) |
 |---|---|---|---|---|---|---|---|---|
 | **EmoDB** | German | 7 | 14.3% | 71.0% ± 0.9% | 70.7% ± 4.6% | 65.7% ± 1.9% | 72.3% ± 3.3% | **97.2% / 97.5%** |
-| **AESDD** | Greek | 5 | 20.0% | *(rerunning)* | *(rerunning)* | *(rerunning)* | *(rerunning)* | **97.8% / 99.2%** |
+| **AESDD** | Greek | 5 | 20.0% | 57.0% ± 6.6% | 77.0% ± 1.7% | 60.7% ± 2.5% | 78.7% ± 5.7% | **97.8% / 99.2%** |
 | **CAFE** | French | 7 | 14.3% | 46.1% ± 5.2% | 39.9% ± 4.2% | 50.0% ± 1.1% | 54.6% ± 6.7% | **99.5%** |
 | **MESD** | Spanish | 6 | 16.7% | 66.3% ± 4.3% | 69.0% ± 1.3% | 64.0% ± 5.5% | 67.3% ± 0.4% | **96.9%** |
 

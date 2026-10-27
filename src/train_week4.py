@@ -15,6 +15,8 @@ import sys
 import time
 import gc
 import random
+import tempfile
+import shutil
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -187,6 +189,8 @@ def execute_run(
 
     run_id = f"{dataset}_{feat_kind}_{n_coeff}_{feat_format}_{setup}_{split_type}_seed{seed}"
     model_ckpt_path = MODELS_DIR / f"ckpt_{run_id}.keras"
+    # Use system temp directory for training checkpoints to prevent OneDrive file lock collisions on Windows
+    temp_ckpt_path = Path(tempfile.gettempdir()) / f"ckpt_{run_id}.keras"
 
     print(f"\n[RUN] {run_id}")
     start_time = time.time()
@@ -209,7 +213,7 @@ def execute_run(
     # 3. Callbacks: Checkpoint best model by val_accuracy
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            filepath=str(model_ckpt_path),
+            filepath=str(temp_ckpt_path),
             monitor="val_accuracy",
             save_best_only=True,
             mode="max",
@@ -229,13 +233,23 @@ def execute_run(
     )
 
     # 5. Load best validation checkpoint
-    best_model = keras.models.load_model(str(model_ckpt_path))
+    best_model = keras.models.load_model(str(temp_ckpt_path))
 
     # 6. Evaluate
     val_loss, val_acc = best_model.evaluate(X_val, y_val, verbose=0)
     test_loss, test_acc = best_model.evaluate(X_test, y_test, verbose=0)
     train_loss, train_acc = best_model.evaluate(X_train, y_train, verbose=0)
     elapsed = time.time() - start_time
+
+    # 7. Persist to models directory (with retry/graceful exception for OneDrive)
+    try:
+        shutil.copy(str(temp_ckpt_path), str(model_ckpt_path))
+    except Exception as e:
+        print(f"  [NOTE] Could not copy checkpoint to {model_ckpt_path.name}: {e}")
+    try:
+        temp_ckpt_path.unlink(missing_ok=True)
+    except Exception:
+        pass
 
     # Clean up model references and session
     del model

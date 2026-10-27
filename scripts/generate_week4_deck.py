@@ -495,13 +495,13 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "  - A score of 50% on 5 classes (2.5x chance) vs. 7 classes (3.5x chance).\n\n"
         "• Observed Cross-Corpus Accuracies (MFCC/MFMC 30 Coeffs):\n"
         "  - EmoDB (German, 7 cls): 66–71% (None) -> 71–72% (Ver A) [Paper: 97.2% / 97.5%]\n"
-        "  - AESDD (Greek, 5 cls): 57–62% (None) -> 63–65% (Ver A) [Paper: 97.8% / 99.2%]\n"
+        "  - AESDD (Greek, 5 cls): 57–61% (None) -> 77–79% (Ver A) [Paper: 97.8% / 99.2%]\n"
         "  - CAFE (French, 7 cls): 46–50% (None) -> 40–55% (Ver A) [Paper: 99.5%]\n"
         "  - MESD (Spanish, 6 cls): 64–66% (None) -> 67–69% (Ver A) [Paper: 96.9%]\n\n"
         "• Key Findings on Augmentation & Replication:\n"
-        "  - Clean Version A augmentation shifts accuracy by only -2% to +5% across corpora.\n"
-        "  - Most augmentation differences are within the random seed standard deviation (±2% to ±6%), indicating no statistically robust improvement.\n"
-        "  - The paper's claimed peak accuracies (~97–99%) were not replicated under our implementation."
+        "  - Clean Version A augmentation provides moderate gains on AESDD (5 classes), but minor or negative shifts on EmoDB, CAFE, and MESD.\n"
+        "  - Across datasets, many augmentation differences remain within random seed variance (seed std ranges from ±2% to ±7%).\n"
+        "  - The paper's claimed peak accuracies (~97–99%) were not replicated under our implementation across any of the four benchmarks."
     )
     for p in tf7_1.paragraphs:
         p.font.size = Pt(11)
