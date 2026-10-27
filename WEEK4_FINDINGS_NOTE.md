@@ -13,23 +13,27 @@
 In Section 3.2 of the paper, the authors state:
 > *"One hundred forty-four feature vectors as input data for our CNN's first layer."*
 
-In Week 3, our baseline used global summary vectors: extracting Mel-Frequency Cepstral Coefficients (MFCC) or Mel-Frequency Magnitude Coefficients (MFMC) across 12, 24, or 30 filterbanks, followed by computing the temporal mean and standard deviation over time. This yielded vectors of dimension 24, 48, and 60, respectively. While this is standard practice in acoustic classification, it left an obvious discrepancy with the paper's specified 144 inputs.
+In Week 3, our baseline used global summary vectors: extracting Mel-Frequency Cepstral Coefficients (MFCC) or Mel-Frequency Magnitude Coefficients (MFMC) across 12, 24, or 30 filterbanks, followed by computing the temporal mean and standard deviation over time. This yielded vectors of dimension 24, 48, and 60, respectively. While standard in acoustic classification, it left an obvious discrepancy with the paper's specified 144 inputs.
 
-Re-examining the paper and acoustic signal processing theory, we formulated two plausible implementations:
+Crucially, **both 144-input representations below are our own reverse-engineered interpretations and are not confirmed by the published text**, which omits audio duration, framing parameters, hop size, and windowing functions.
 
 1. **Interpretation 1: `frames144` (Temporal STFT Sequence)**
    - **Formulation:** A 2D matrix of shape `(144, n_coeff)` representing 144 consecutive time frames.
    - **Acoustic Rationale:** Conv1D with `kernel_size=15` sliding along the feature dimension of a 24-value vector spans 62.5% of the vector in a single stride, which lacks physical meaning. Sliding `kernel_size=15` across 144 time frames (hop length 256 samples @ 16 kHz = 16 ms) corresponds to a receptive field of ~240 ms, which aligns naturally with speech phoneme and syllable durations.
+   - **Handling Variable Audio Durations:** Raw audio clips naturally vary in duration. After STFT framing at hop size 256 samples (16 ms), clips shorter than 144 frames are zero-padded at the end along the temporal dimension, whereas clips longer than 144 frames are center-cropped to exactly 144 frames.
    - **Architecture:** The 4 Conv1D layers with MaxPool1D(2) downsample the 144 frames ($144 \to 72 \to 36 \to 18 \to 9$), producing $9 \times 64 = 576$ units at the flatten stage feeding into `Dense(120)`.
 
 2. **Interpretation 2: `stats144` (Extended Multi-Stream Feature Vector)**
    - **Formulation:** A 1D vector of shape `(144, 1)` constructed by augmenting static cepstral coefficients with dynamic velocity ($\Delta$) and acceleration ($\Delta^2$) trajectories, summarized with statistical moments.
-   - **Acoustic Rationale:** For 24 coefficients, $24 \text{ static} + 24 \Delta + 24 \Delta^2 = 72$ streams; computing `mean` and `std` across each yields exactly $72 \times 2 = 144$ values. For 12 coefficients, computing 4 summary statistics (`mean`, `std`, `min`, `max`) yields $12 \times 3 \times 4 = 144$ values.
+   - **Exact 144-Value Derivations:**
+     * **12 coefficients:** $12 \text{ static} + 12 \Delta + 12 \Delta^2 = 36$ trajectories. Computing 4 summary statistics (`mean`, `std`, `min`, `max`) across each gives exactly $36 \times 4 = 144$ scalar values.
+     * **24 coefficients:** $24 \text{ static} + 24 \Delta + 24 \Delta^2 = 72$ trajectories. Computing 2 summary statistics (`mean`, `std`) across each gives exactly $72 \times 2 = 144$ scalar values.
+     * **30 coefficients:** $30 \text{ static} + 30 \Delta + 30 \Delta^2 = 90$ trajectories. Computing `mean` and `std` produces 180 statistics; to match 144 inputs, this vector is truncated to the first 144 values ($30 \text{ static mean/std} + 30 \Delta \text{ mean/std} + 12 \Delta^2 \text{ mean/std}$).
 
 ---
 
 ### 1.2 Did the 144-Input Format Close the Performance Gap?
-**No. In fact, both 144-input representations performed worse than the compact 24/48/60 baseline.**
+**No. On 11 of the 12 evaluated configurations, the compact 24/48/60 baseline achieved higher test accuracy than both 144-input representations.** (The sole exception was MFMC-12 unaugmented, where both 144-input formats scored higher than the baseline).
 
 | Feature & Coeffs | Setup | Baseline (24/48/60) | frames144 (144 × C) | stats144 (144 × 1) | Paper Target (Table 3) |
 |---|---|---|---|---|---|
@@ -47,10 +51,10 @@ Re-examining the paper and acoustic signal processing theory, we formulated two 
 | **MFMC 30** | Version A (5x) | 72.3% ± 3.3% | 59.2% ± 2.7% | 61.4% ± 2.4% | 97.2% |
 
 #### Key Takeaways:
-1. **Severe Temporal Overfitting in `frames144`:** In `frames144`, 144 temporal frames produce 576 units into `Dense(120)`. Without recurrent units or attention, the 1D-CNN memorizes specific training sequences, reaching 100% training accuracy within 15 epochs while test accuracy drops by 7% to 15% compared to the baseline.
-2. **Implicit Regularization of Summary Statistics:** The global `mean + std` pooling acts as an effective feature-level regularizer, reducing sample variance and outperforming both multi-stream `stats144` and temporal `frames144`.
-3. **Format Used in Task 2:** Task 2 used the **baseline format** (24, 48, 60 values). Because the baseline format was strictly superior to both 144-input representations, no better format exists to rerun Task 2 with.
-4. **Verdict:** The 144-input representation does **not** close the performance gap. The paper's claimed numbers were not replicated under our implementation with either 144-input representation.
+1. **Hypothesis of Temporal Overfitting in `frames144`:** In `frames144`, 144 temporal frames produce 576 units into `Dense(120)`. Without recurrent units or attention, the 1D-CNN saturated training accuracy to ~100% within 15 epochs while validation performance plateaued. We hypothesize that this reflects rapid sequence memorization on small sample sizes (321 clips), though this remains a hypothesis as formal regularization or ablation sweeps were not conducted.
+2. **Implicit Regularization of Summary Statistics:** The global `mean + std` pooling acts as an effective feature-level regularizer, reducing sample variance and outperforming the 144-input representations in most conditions.
+3. **Format Used in Task 2:** Task 2 used the **baseline format** (24, 48, 60 values) because it yielded the highest overall accuracy across the majority of configurations.
+4. **Verdict:** The 144-input representation does **not** close the performance gap with the paper's claims.
 
 ---
 
@@ -76,43 +80,46 @@ All datasets were resampled to 16 kHz mono, preprocessed identically, and evalua
 >
 > A model achieving $50\%$ test accuracy on AESDD is $2.5\times$ chance, whereas $50\%$ on CAFE/EmoDB represents $3.5\times$ chance.
 
-| Dataset | Language | Classes | Chance Level | MFCC 30 (None) | MFCC 30 (Ver A) | MFMC 30 (None) | MFMC 30 (Ver A) | Paper Claim (Cited) |
+| Dataset | Language | Classes | Chance Level | MFCC 30 (None) | MFCC 30 (Ver A) | MFMC 30 (None) | MFMC 30 (Ver A) | Paper Claim (Table 3, 30 Coeffs) |
 |---|---|---|---|---|---|---|---|---|
-| **EmoDB** | German | 7 | 14.3% | 71.0% ± 0.9% | 70.7% ± 4.6% | 65.7% ± 1.9% | 72.3% ± 3.3% | **97.2% / 97.5%** |
-| **AESDD** | Greek | 5 | 20.0% | 57.0% ± 6.6% | 77.0% ± 1.7% | 60.7% ± 2.5% | 78.7% ± 5.7% | **97.8% / 99.2%** |
-| **CAFE** | French | 7 | 14.3% | 46.1% ± 5.2% | 39.9% ± 4.2% | 50.0% ± 1.1% | 54.6% ± 6.7% | **99.5%** |
-| **MESD** | Spanish | 6 | 16.7% | 66.3% ± 4.3% | 69.0% ± 1.3% | 64.0% ± 5.5% | 67.3% ± 0.4% | **96.9%** |
+| **EmoDB** | German | 7 | 14.3% | 71.0% ± 0.9% | 70.7% ± 4.6% | 65.7% ± 1.9% | 72.3% ± 3.3% | **86.9% / 97.2%** (Table 3) |
+| **AESDD** | Greek | 5 | 20.0% | 54.0% ± 6.6% | 57.7% ± 11.1% | 57.3% ± 7.2% | 64.3% ± 4.6% | **95.0% / 97.8%** (Table 3) |
+| **CAFE** | French | 7 | 14.3% | 46.1% ± 5.2% | 39.9% ± 4.2% | 50.0% ± 1.1% | 54.6% ± 6.7% | **93.6% / 99.5%** (Table 3) |
+| **MESD** | Spanish | 6 | 16.7% | 66.3% ± 4.3% | 69.0% ± 1.3% | 64.0% ± 5.5% | 67.3% ± 0.4% | **94.2% / 96.9%** (Table 3) |
 
-### 2.3 Comprehensive Citations for Published Paper Claims
+### 2.3 Comprehensive Citations for Published Paper Claims (Per-Coefficient from Table 3)
 
-A critical finding in reviewing the published text (Thomas Mary Little Flower et al., *Automatika*, 2024) is that the authors report different accuracy numbers in different sections:
-
-1. **Why Week 3 cited 97.2% while Table 2 cites 97.5% for EmoDB:**
-   - **Page 8 (Section 4, text under Figure 8):** The authors report **97.2%** for the EmoDB test dataset under 1D-CNN-MFMC with DA. This corresponds specifically to the **30-coefficient** model.
-   - **Page 13 (Table 3, "Comparative Analysis of the five models' accuracies"):** Shows the breakdown by coefficient count:
-     * 12 coefficients with DA: **96.64%**
-     * 24 coefficients with DA: **97.5%** (peak accuracy across coefficients)
-     * 30 coefficients with DA: **97.2%**
-   - **Page 13 (Table 2) & Page 2 (Abstract):** The authors select the peak number across all coefficient sizes, reporting **97.50%** for EmoDB, **99.20%** for AESDD, **99.50%** for CAFE, and **96.90%** for MESD.
-
-2. **Full Inventory of Paper Citations:**
-   - **1D-CNN-MFCC without DA (Page 8, under Figure 5):**
-     * AESDD: **82%** | CAFE: **88.8%** | EmoDB: **85%** | MESD: **85.5%**
-   - **1D-CNN-MFCC with DA (Page 8, under Figure 6):**
-     * AESDD: **95.2%** | CAFE: **98.6%** | EmoDB: **96.1%** | MESD: **96.1%**
-   - **1D-CNN-MFMC without DA (Page 8, under Figure 7):**
-     * AESDD: **95%** | CAFE: **93.6%** | EmoDB: **86.9%** | MESD: **94.2%**
-   - **1D-CNN-MFMC with DA (Page 8, under Figure 8 & Page 13 Table 3):**
-     * AESDD: **97.8%** (30 coeffs) / **99.2%** (24 coeffs, Table 2 & 3)
-     * CAFE: **99.5%** (30 coeffs, Table 2 & 3) / **97.5%** (24 coeffs)
-     * EmoDB: **97.2%** (30 coeffs) / **97.5%** (24 coeffs, Table 2 & 3)
-     * MESD: **96.9%** (30 coeffs, Table 2 & 3) / **96.4%** (24 coeffs)
+In reviewing the published text (Thomas Mary Little Flower et al., *Automatika*, 2024), we noted two distinct reporting levels:
+1. **Per-Feature High-Level Text (Page 8, under Figures 5–8):** The text reports single summary figures per dataset (which correspond to the 30-coefficient model from Table 3):
+   - MFCC without DA: EmoDB 85.0%, AESDD 82.0%, CAFE 88.8%, MESD 85.5%
+   - MFCC with DA: EmoDB 96.1%, AESDD 95.2%, CAFE 98.6%, MESD 96.1%
+   - MFMC without DA: EmoDB 86.9%, AESDD 95.0%, CAFE 93.6%, MESD 94.2%
+   - MFMC with DA: EmoDB 97.2%, AESDD 97.8%, CAFE 99.5%, MESD 96.9%
+2. **Exact Per-Coefficient Breakdown (Page 13, Table 3):**
+   Table 3 provides the exact breakdown for all 12, 24, and 30 coefficient settings across all five datasets:
+   - **AESDD:**
+     * 12 coeffs: MFCC None = 80.0%, Ver A = 97.4% | MFMC None = 90.0%, Ver A = 98.0%
+     * 24 coeffs: MFCC None = 89.0%, Ver A = 97.8% | MFMC None = 96.0%, Ver A = 99.2%
+     * 30 coeffs: MFCC None = 82.0%, Ver A = 95.2% | MFMC None = 95.0%, Ver A = 97.8%
+   - **CAFE:**
+     * 12 coeffs: MFCC None = 85.6%, Ver A = 94.3% | MFMC None = 92.5%, Ver A = 96.7%
+     * 24 coeffs: MFCC None = 88.2%, Ver A = 96.6% | MFMC None = 93.0%, Ver A = 97.5%
+     * 30 coeffs: MFCC None = 88.8%, Ver A = 98.6% | MFMC None = 93.6%, Ver A = 99.5%
+   - **EmoDB:**
+     * 12 coeffs: MFCC None = 85.0%, Ver A = 93.5% | MFMC None = 90.7%, Ver A = 96.64%
+     * 24 coeffs: MFCC None = 86.0%, Ver A = 96.8% | MFMC None = 90.7%, Ver A = 97.5%
+     * 30 coeffs: MFCC None = 85.0%, Ver A = 96.1% | MFMC None = 86.9%, Ver A = 97.2%
+   - **MESD:**
+     * 12 coeffs: MFCC None = 82.7%, Ver A = 91.4% | MFMC None = 90.2%, Ver A = 91.67%
+     * 24 coeffs: MFCC None = 82.7%, Ver A = 95.6% | MFMC None = 91.3%, Ver A = 96.4%
+     * 30 coeffs: MFCC None = 85.5%, Ver A = 96.1% | MFMC None = 94.2%, Ver A = 96.9%
+3. **Abstract & Table 2 Peak Figures:** The authors highlight the overall maximum accuracy across any coefficient setting: EmoDB 97.50% (24 coeffs), AESDD 99.20% (24 coeffs), CAFE 99.50% (30 coeffs), MESD 96.90% (30 coeffs). This explains why the Week 3 status deck referenced 97.2% (the 30-coeff setting from Figure 8 / Table 3) while Table 2 in Week 4 reported 97.5% (the 24-coeff peak).
 
 ### 2.4 Empirical Observations & Statistical Nuance
 1. **The Paper's Claims Were Not Replicated Under Our Implementation:**
    Across all four speech corpora, clean leak-free evaluation yields accuracies substantially lower than the paper's reported ~97–99% figures (lagging by 25 to 45 percentage points).
 2. **Augmentation Gains Are Within Seed Standard Deviation:**
-   Under clean Version A augmentation, test accuracy changes by only $-1.5\%$ to $+3.5\%$ on most configurations. Crucially, **these differences are within $\pm 1$ standard deviation across random seeds** (typical standard deviations range from 2% to 6%). This indicates that additive Gaussian noise does not produce a statistically reliable or significant regularization benefit on test performance.
+   Under clean Version A augmentation, test accuracy changes by only $-1.5\%$ to $+3.5\%$ on most configurations. Crucially, **these differences are within $\pm 1$ standard deviation across random seeds** (typical standard deviations range from 2% to 6%). This indicates that the observed shifts from additive Gaussian noise are not distinguishable from seed variation.
 
 ---
 
@@ -121,18 +128,41 @@ A critical finding in reviewing the published text (Thomas Mary Little Flower et
 ### 3.1 The Speaker Memorization Confound
 In standard stratified splits, clips from every actor are randomly distributed across train, validation, and test sets. Deep neural networks readily memorize speaker biometric traits (vocal tract geometry, formant frequencies, fundamental pitch ranges) rather than generalized emotional expressions. Under random splits, the network easily functions as a pseudo-speaker identifier mapping speaker identity to emotion labels.
 
-To quantify the magnitude of this confound, we have designed strict speaker-disjoint splits:
-- **EmoDB (10 speakers: 5M, 5F):** 6 training speakers (3M, 3F, ~60% of clips), 2 validation speakers (1M, 1F, ~20%), 2 test speakers (1M, 1F, ~20%).
-- **CAFE (12 speakers: 6M, 6F, 78 clips each):** 8 training speakers (4M, 4F, 624 clips, 66.7%), 2 validation speakers (1M, 1F, 156 clips, 16.7%), 2 test speakers (1M, 1F, 156 clips, 16.7%).
-- **AESDD (5 core actors: 1–5):** 3 core actors + fallback actor 6 (301 clips, ~60%), 1 core actor for validation (~100 clips, ~20%), 1 core actor for test (~100 clips, ~20%).
-- **MESD:** **EXCLUDED** from Task 3 because it contains only 3 demographic cohorts (`female`, `male`, `child`) without individual speaker identities.
+To quantify this confound, we use **rotating speaker-disjoint folds** where speakers are strictly segregated across folds:
+- **EmoDB (10 speakers: 5M, 5F) -> 5 Folds:**
+  * Test: 2 speakers (1 male, 1 female, ~20% of clips).
+  * Val: 2 speakers taken from the remaining speakers (1 male, 1 female, ~20%).
+  * Train: remaining 6 speakers (3 male, 3 female, ~60%).
+  * Rotating test fold ensures all 10 speakers appear in the test set across the 5 folds.
+- **CAFE (12 speakers: 6M, 6F) -> 6 Folds:**
+  * Test: 2 speakers (1 male, 1 female, exactly 156 clips, 16.7%).
+  * Val: 2 speakers taken from the remaining speakers (1 male, 1 female, 156 clips, 16.7%).
+  * Train: remaining 8 speakers (4 male, 4 female, exactly 624 clips, 66.7%).
+  * Rotating test fold ensures all 12 speakers appear in the test set across the 6 folds.
+- **AESDD (5 core actors) -> 5 Folds:**
+  * Test: 1 core actor (~100 clips, 20%).
+  * Val: 1 core actor taken from the remaining core actors (~100 clips, 20%).
+  * Train: remaining 3 core actors + ALL Actor 6 fallback clips (always in train).
+  * Clip partition: exactly **300 train + 100 val + 100 test = 500 clips** for every fold.
+  * Rotating test fold ensures all 5 core actors appear in the test set across the 5 folds.
+- **MESD:** **EXCLUDED** from Task 3 because it contains only 3 demographic cohorts (`female`, `male`, `child`) rather than individual speaker identities.
 
 ### 3.2 Strict Evaluation Protocol & Integrity Guardrails
 1. **Zero Speaker Overlap:** Verified programmatically with automated assertions: $\text{Train} \cap \text{Val} = \emptyset$, $\text{Train} \cap \text{Test} = \emptyset$, $\text{Val} \cap \text{Test} = \emptyset$.
-2. **Model Selection on Validation Speakers Only:** Model checkpoints are monitored and selected solely by accuracy on the unseen validation speakers. The test speakers are scored exactly once on the frozen best checkpoint.
-3. **Task 3 Run Matrix:** 3 datasets $\times$ 2 feature types (MFCC, MFMC) $\times$ 3 coefficient counts (12, 24, 30) $\times$ 2 setups (`none`, `version_a`) $\times$ 3 seeds (42, 43, 44) = 108 runs.
-4. **Estimated Execution Time:** ~14 to 16 minutes total (~3 mins EmoDB, ~5.5 mins AESDD, ~6 mins CAFE).
-5. **Execution Status:** **Paused awaiting user review and explicit confirmation before running.**
+2. **Model Selection on Validation Speakers Only:** Model checkpoints are monitored and selected solely by accuracy on the unseen validation speakers. The test fold is scored exactly once on the frozen best checkpoint.
+3. **Configurations Evaluated:** 24 and 30 coefficients only (dropping 12 coefficients), MFCC and MFMC, none and version A (clean 5x), 3 random seeds (42, 43, 44).
+4. **Metric Reporting:** Results are aggregated across folds, reporting **Mean $\pm$ Std over folds** for each configuration.
+5. **Run Count Breakdown (384 Runs Total):**
+   * **EmoDB:** $5 \text{ folds} \times 2 \text{ features} \times 2 \text{ coeffs} \times 2 \text{ setups} \times 3 \text{ seeds} = \mathbf{120\text{ runs}}$
+   * **AESDD:** $5 \text{ folds} \times 2 \text{ features} \times 2 \text{ coeffs} \times 2 \text{ setups} \times 3 \text{ seeds} = \mathbf{120\text{ runs}}$
+   * **CAFE:** $6 \text{ folds} \times 2 \text{ features} \times 2 \text{ coeffs} \times 2 \text{ setups} \times 3 \text{ seeds} = \mathbf{144\text{ runs}}$
+   * **Total Runs:** $120 + 120 + 144 = \mathbf{384\text{ runs}}$
+6. **Estimated Runtime:**
+   * EmoDB: $\sim 17\text{ minutes}$
+   * AESDD: $\sim 53\text{ minutes}$
+   * CAFE: $\sim 78\text{ minutes}$
+   * **Total Runtime:** $\sim 148\text{ minutes}$ ($\mathbf{\approx 2.5\text{ hours}}$ on CPU).
+7. **Execution Status:** **Paused awaiting user review and explicit confirmation before running.**
 
 ---
 

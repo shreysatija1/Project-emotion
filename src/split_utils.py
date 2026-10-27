@@ -133,6 +133,84 @@ def make_speaker_independent_split(df, dataset_name, seed=42):
     return df
 
 
+def make_rotating_speaker_fold(df, dataset_name, fold_idx):
+    """
+    Create a rotating speaker-disjoint fold where:
+    - EmoDB: 5 folds (2 test speakers: 1M, 1F; 2 val speakers: 1M, 1F; 6 train speakers: 3M, 3F).
+    - CAFE: 6 folds (2 test speakers: 1M, 1F; 2 val speakers: 1M, 1F; 8 train speakers: 4M, 4F).
+    - AESDD: 5 folds (1 test core actor; 1 val core actor; 3 train core actors + actor 6 in train).
+    
+    Speakers are never shared between train, validation, and test.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Metadata table containing 'speaker_id'.
+    dataset_name : str
+        'emodb', 'cafe', or 'aesdd'.
+    fold_idx : int
+        0-based fold index.
+        
+    Returns
+    -------
+    pd.DataFrame with 'split' column ('train', 'val', 'test').
+    """
+    df = df.copy()
+    name = dataset_name.lower().strip()
+    
+    if name == "emodb":
+        # 10 speakers: 5 male, 5 female paired into 5 groups (integers in metadata)
+        m_spk = [3, 10, 11, 12, 15]
+        f_spk = [8, 9, 13, 14, 16]
+        groups = [[m_spk[i], f_spk[i]] for i in range(5)]
+        n_folds = 5
+        te_i = fold_idx % n_folds
+        va_i = (fold_idx + 1) % n_folds
+        te_spk = set(groups[te_i])
+        va_spk = set(groups[va_i])
+        tr_spk = set([s for i in range(5) if i not in (te_i, va_i) for s in groups[i]])
+        
+    elif name == "cafe":
+        # 12 speakers: 6 male, 6 female paired into 6 groups ('cafe_01', etc.)
+        m_spk = ["cafe_01", "cafe_03", "cafe_05", "cafe_07", "cafe_09", "cafe_11"]
+        f_spk = ["cafe_02", "cafe_04", "cafe_06", "cafe_08", "cafe_10", "cafe_12"]
+        groups = [[m_spk[i], f_spk[i]] for i in range(6)]
+        n_folds = 6
+        te_i = fold_idx % n_folds
+        va_i = (fold_idx + 1) % n_folds
+        te_spk = set(groups[te_i])
+        va_spk = set(groups[va_i])
+        tr_spk = set([s for i in range(6) if i not in (te_i, va_i) for s in groups[i]])
+        
+    elif name == "aesdd":
+        # 5 core actors (1, 2, 3, 4, 5); actor 6 fallback takes are kept in train ALWAYS
+        core_actors = [1, 2, 3, 4, 5]
+        n_folds = 5
+        te_a = core_actors[fold_idx % n_folds]
+        va_a = core_actors[(fold_idx + 1) % n_folds]
+        te_spk = set([te_a])
+        va_spk = set([va_a])
+        tr_spk = set([a for a in core_actors if a not in (te_a, va_a)] + [6])
+        
+    else:
+        raise ValueError(f"Rotating speaker folds not supported for dataset: {name}")
+
+    df["split"] = "train"
+    df.loc[df["speaker_id"].isin(va_spk), "split"] = "val"
+    df.loc[df["speaker_id"].isin(te_spk), "split"] = "test"
+
+    # STRICT ASSERTIONS: No speaker overlap
+    actual_tr = set(df[df["split"] == "train"]["speaker_id"].unique())
+    actual_va = set(df[df["split"] == "val"]["speaker_id"].unique())
+    actual_te = set(df[df["split"] == "test"]["speaker_id"].unique())
+
+    assert len(actual_tr & actual_va) == 0, f"Leakage train/val: {actual_tr & actual_va}"
+    assert len(actual_tr & actual_te) == 0, f"Leakage train/test: {actual_tr & actual_te}"
+    assert len(actual_va & actual_te) == 0, f"Leakage val/test: {actual_va & actual_te}"
+
+    return df
+
+
 if __name__ == "__main__":
     from data_loader import get_metadata
     for name in ["emodb", "cafe", "aesdd", "mesd"]:

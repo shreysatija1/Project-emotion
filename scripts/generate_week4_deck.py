@@ -317,31 +317,31 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "  'One hundred forty-four feature vectors as input data for our CNN\\'s first layer.'\n\n"
         "• Key Observations & Ambiguities:\n"
         "  1. The authors use the plural 'feature vectors', implying a 2D matrix (T frames x C channels) rather than a single 1D vector.\n"
-        "  2. In speech processing, Conv1D with kernel size 15 makes physical sense along the time dimension (spanning ~240 ms of speech), whereas across a 24-element global summary vector, kernel 15 covers 62.5% of the entire representation in a single hop!\n"
-        "  3. However, the paper never specifies the audio clip duration, STFT hop size, or framing required to yield exactly 144 frames."
+        "  2. In speech processing, Conv1D with kernel size 15 along the temporal axis (~240 ms) has acoustic validity, whereas on a 24-dim summary vector, kernel 15 spans 62.5% of all features in one stride.\n"
+        "  3. Crucially, both 144-input representations below are OUR INTERPRETATION and are NOT CONFIRMED by the published paper, which omits clip duration, framing parameters, and hop sizes."
     )
     for p in tf4_1.paragraphs:
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.color.rgb = TEXT_DARK
 
     # Card 2: Formulated Implementations
-    add_card(s4, Inches(6.8), Inches(1.7), Inches(5.7), Inches(5.2), title="Two Grounded Interpretations Implemented")
+    add_card(s4, Inches(6.8), Inches(1.7), Inches(5.7), Inches(5.2), title="Two Reverse-Engineered Interpretations")
     tb4_2 = s4.shapes.add_textbox(Inches(7.0), Inches(2.3), Inches(5.3), Inches(4.4))
     tf4_2 = tb4_2.text_frame
     tf4_2.word_wrap = True
     tf4_2.text = (
         "• Interpretation 1: 'frames144' (Temporal Sequence)\n"
-        "  - Representation: Matrix of shape (144, n_coeff).\n"
-        "  - Construction: Audio fixed to 2.3 seconds (or center-cropped/padded) at 16 kHz with hop length 256 samples (16 ms) -> exactly 144 frames.\n"
-        "  - Conv1D slides over time; 4 pooling layers reduce time: 144 -> 72 -> 36 -> 18 -> 9. Flatten layer yields 9 x 64 = 576 units into Dense(120).\n\n"
-        "• Interpretation 2: 'stats144' (Multi-Stream Statistics)\n"
-        "  - Representation: 1D vector of shape (144, 1).\n"
-        "  - Construction: Static + Delta + Delta-Delta trajectories across coefficients, summarized via statistical moments (mean, std, min, max).\n"
-        "  - For 24 coeffs: 24 x 3 streams x 2 stats = 144 features.\n"
-        "  - For 12 coeffs: 12 x 3 streams x 4 stats = 144 features."
+        "  - Shape: Matrix of shape (144, n_coeff) at hop size 256 samples (16 ms @ 16 kHz).\n"
+        "  - Variable Duration Handling: Clips with <144 frames are zero-padded at the end; clips with >144 frames are center-cropped to 144 frames.\n"
+        "  - 4 Conv1D+Pool layers reduce time: 144 -> 72 -> 36 -> 18 -> 9. Flatten yields 9 x 64 = 576 units into Dense(120).\n\n"
+        "• Interpretation 2: 'stats144' (Multi-Stream Summary Vector)\n"
+        "  - Shape: 1D vector of shape (144, 1) combining static + delta + delta-delta.\n"
+        "  - 12 coeffs: 36 trajectories x 4 stats (mean, std, min, max) = exactly 144 values.\n"
+        "  - 24 coeffs: 72 trajectories x 2 stats (mean, std) = exactly 144 values.\n"
+        "  - 30 coeffs: 90 trajectories x 2 stats = 180 values, truncated to first 144 values."
     )
     for p in tf4_2.paragraphs:
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.color.rgb = TEXT_DARK
 
     add_speaker_notes(
@@ -367,16 +367,15 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
     tf5_1.word_wrap = True
     tf5_1.text = (
         "• Does 144 Inputs Close the Gap? NO.\n"
-        "  - In fact, the temporal frames144 format performs significantly WORSE than our 24/48/60 baseline.\n\n"
+        "  - On 11 of 12 configurations, the 24/48/60 baseline achieved higher test accuracy than both 144-input representations (only on MFMC-12 unaugmented did 144 formats score higher: 57-60% vs 51.7%).\n\n"
         "• Quantitative Comparison (MFCC, None, Stratified):\n"
-        "  - 12 Coeffs Baseline (24-dim): 64.2% ± 4.4%\n"
-        "  - 12 Coeffs frames144 (144x12): 56.4% ± 2.0% (Drop: -7.8%)\n"
-        "  - 24 Coeffs Baseline (48-dim): 70.1% ± 3.8%\n"
-        "  - 24 Coeffs frames144 (144x24): 54.8% ± 5.2% (Drop: -15.3%)\n\n"
-        "• Why Does frames144 Degrade Performance?\n"
-        "  - Severe Overfitting: Without global pooling, the model has 576 units feeding into Dense(120).\n"
-        "  - On small datasets (321 training clips), Conv1D rapidly memorizes exact frame sequences, reaching 100% training accuracy within 15 epochs while validation diverges.\n"
-        "  - Baseline summary statistics (mean+std) provide implicit temporal regularization."
+        "  - 12 Coeffs: Baseline (24-dim) 64.2% ± 2.4% vs. frames144 56.4% ± 1.9%\n"
+        "  - 24 Coeffs: Baseline (48-dim) 69.2% ± 4.3% vs. frames144 54.8% ± 5.1%\n"
+        "  - 30 Coeffs: Baseline (60-dim) 71.0% ± 0.9% vs. frames144 57.0% ± 3.7%\n\n"
+        "• Overfitting Hypothesis (Not Tested):\n"
+        "  - We hypothesize that frames144 rapidly memorizes sequences due to 576 units into Dense(120), as training accuracy saturated to ~100% within 15 epochs.\n"
+        "  - However, this remains a hypothesis as controlled regularization sweeps were not conducted.\n"
+        "  - Global pooling (mean+std) provides effective implicit regularization."
     )
     for p in tf5_1.paragraphs:
         p.font.size = Pt(11)
@@ -494,13 +493,13 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "  - CAFE (7 classes): 14.3% | EmoDB (7 classes): 14.3%\n"
         "  - A score of 50% on 5 classes (2.5x chance) vs. 7 classes (3.5x chance).\n\n"
         "• Observed Cross-Corpus Accuracies (MFCC/MFMC 30 Coeffs):\n"
-        "  - EmoDB (German, 7 cls): 66–71% (None) -> 71–72% (Ver A) [Paper: 97.2% / 97.5%]\n"
-        "  - AESDD (Greek, 5 cls): 57–61% (None) -> 77–79% (Ver A) [Paper: 97.8% / 99.2%]\n"
-        "  - CAFE (French, 7 cls): 46–50% (None) -> 40–55% (Ver A) [Paper: 99.5%]\n"
-        "  - MESD (Spanish, 6 cls): 64–66% (None) -> 67–69% (Ver A) [Paper: 96.9%]\n\n"
+        "  - EmoDB (German, 7 cls): 66–71% (None) -> 71–72% (Ver A) [Paper: 86.9% / 97.2%]\n"
+        "  - AESDD (Greek, 5 cls): 54–57% (None) -> 58–64% (Ver A) [Paper: 95.0% / 97.8%]\n"
+        "  - CAFE (French, 7 cls): 46–50% (None) -> 40–55% (Ver A) [Paper: 93.6% / 99.5%]\n"
+        "  - MESD (Spanish, 6 cls): 64–66% (None) -> 67–69% (Ver A) [Paper: 94.2% / 96.9%]\n\n"
         "• Key Findings on Augmentation & Replication:\n"
-        "  - Clean Version A augmentation provides moderate gains on AESDD (5 classes), but minor or negative shifts on EmoDB, CAFE, and MESD.\n"
-        "  - Across datasets, many augmentation differences remain within random seed variance (seed std ranges from ±2% to ±7%).\n"
+        "  - Clean Version A augmentation shifts test accuracy by -7% to +11% across corpora.\n"
+        "  - Across datasets, most augmentation differences are not distinguishable from seed variation (seed std ranges from ±2% to ±11%).\n"
         "  - The paper's claimed peak accuracies (~97–99%) were not replicated under our implementation across any of the four benchmarks."
     )
     for p in tf7_1.paragraphs:
@@ -564,30 +563,28 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         p.font.color.rgb = TEXT_DARK
 
     # Card 2: Group Partitioning Design
-    add_card(s8, Inches(6.8), Inches(1.7), Inches(5.7), Inches(5.2), title="Strict Disjoint Partitioning Design")
+    add_card(s8, Inches(6.8), Inches(1.7), Inches(5.7), Inches(5.2), title="Rotating Speaker-Disjoint Fold Design")
     tb8_2 = s8.shapes.add_textbox(Inches(7.0), Inches(2.3), Inches(5.3), Inches(4.4))
     tf8_2 = tb8_2.text_frame
     tf8_2.word_wrap = True
     tf8_2.text = (
-        "• Disjoint Speaker Partitions Built:\n"
-        "  - EmoDB (10 speakers):\n"
-        "    * Train: 6 speakers (~60% clips)\n"
-        "    * Val: 2 speakers (~20% clips)\n"
-        "    * Test: 2 speakers (~20% clips)\n"
-        "  - CAFE (12 speakers):\n"
-        "    * Train: 8 speakers (624 clips)\n"
-        "    * Val: 2 speakers (156 clips)\n"
-        "    * Test: 2 speakers (156 clips)\n"
-        "  - AESDD (5 speakers):\n"
-        "    * Train: 3 speakers (300 clips)\n"
-        "    * Val: 1 speaker (100 clips)\n"
-        "    * Test: 1 speaker (100 clips)\n\n"
-        "• Verification:\n"
-        "  - Set intersection: Train ∩ Val = ∅, Train ∩ Test = ∅, Val ∩ Test = ∅.\n"
-        "  - Verified 100% disjointness via automated unit tests."
+        "• Rotating Speaker-Disjoint Folds:\n"
+        "  - EmoDB (10 speakers: 5M, 5F) -> 5 Folds:\n"
+        "    * Test: 2 speakers (1M, 1F, ~20%)\n"
+        "    * Val: 2 speakers from remaining (1M, 1F, ~20%)\n"
+        "    * Train: remaining 6 speakers (3M, 3F, ~60%)\n"
+        "  - CAFE (12 speakers: 6M, 6F) -> 6 Folds:\n"
+        "    * Test: 2 speakers (1M, 1F, 156 clips, 16.7%)\n"
+        "    * Val: 2 speakers from remaining (156 clips, 16.7%)\n"
+        "    * Train: remaining 8 speakers (624 clips, 66.7%)\n"
+        "  - AESDD (5 core actors) -> 5 Folds:\n"
+        "    * Test: 1 core actor (100 clips, 20%)\n"
+        "    * Val: 1 core actor from remaining (100 clips, 20%)\n"
+        "    * Train: 3 core actors + Actor 6 takes (exactly 300 clips, 60%)\n"
+        "    * Total: 300 train + 100 val + 100 test = 500 clips."
     )
     for p in tf8_2.paragraphs:
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.color.rgb = TEXT_DARK
 
     add_speaker_notes(
@@ -613,18 +610,20 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
     tf9_1.word_wrap = True
     tf9_1.text = (
         "• Strict Experimental Guardrails:\n"
-        "  - Grouped Partitioning: Speakers never shared across train, val, and test.\n"
+        "  - Rotating Folds: Speakers never shared between train, val, and test.\n"
         "  - Model Selection: Best checkpoint selected SOLELY on validation speakers.\n"
-        "  - Single-Pass Test: Test speakers evaluated exactly once on frozen weights.\n"
-        "  - MESD Excluded: Lacks individual speaker IDs (demographic cohorts only).\n\n"
-        "• Experimental Matrix (108 Runs Total):\n"
-        "  - 3 Corpora: EmoDB, CAFE, AESDD\n"
-        "  - 2 Features: MFCC vs. MFMC (12, 24, 30 coeffs)\n"
-        "  - 2 Setups: None vs. Version A (clean 5x)\n"
-        "  - 3 Speaker Assignment Seeds: 42, 43, 44\n\n"
-        "• Execution & Runtime Estimate:\n"
-        "  - Estimated total runtime: ~14–16 minutes on CPU.\n"
-        "  - Status: Paused awaiting supervisor review and confirmation."
+        "  - Single-Pass Test: Test fold evaluated once on frozen weights.\n"
+        "  - MESD Excluded: Demographic cohorts only, no individual speaker IDs.\n\n"
+        "• Experimental Matrix (384 Runs Total):\n"
+        "  - 3 Corpora: EmoDB (5 folds), CAFE (6 folds), AESDD (5 folds)\n"
+        "  - Coefficients: 24 and 30 only (dropped 12)\n"
+        "  - Features: MFCC & MFMC (2) | Setups: None & Ver A (2)\n"
+        "  - Seeds: 42, 43, 44 (3)\n"
+        "  - Formula: (5 + 6 + 5) folds x 2 feats x 2 coeffs x 2 setups x 3 seeds = 384 runs.\n\n"
+        "• Runtime Estimate & Metric Reporting:\n"
+        "  - EmoDB: ~17m | AESDD: ~53m | CAFE: ~78m -> Total: ~2.5 hours (~148m).\n"
+        "  - Reporting: Mean ± Std over folds for each configuration.\n"
+        "  - Status: Paused awaiting supervisor approval before running."
     )
     for p in tf9_1.paragraphs:
         p.font.size = Pt(11)
@@ -678,7 +677,7 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "   - Summary statistics (mean + std) provide essential implicit regularization for small sample regimes.\n\n"
         "2. Additive Gaussian Noise Augmentation Does Not Reliably Boost Generalization\n"
         "   - Across German (EmoDB), French (CAFE), Greek (AESDD), and Spanish (MESD), clean Version A augmentation shifts test accuracy by only -2% to +5%.\n"
-        "   - Most shifts fall within the random seed standard deviation (±2% to ±6%), indicating no statistically significant regularization benefit.\n"
+        "   - Most shifts fall within the random seed standard deviation (±2% to ±6%), and are not distinguishable from seed variation.\n"
         "   - The paper's claimed peak accuracies (~97–99%) were not replicated under our implementation across any of the four benchmarks.\n\n"
         "3. Speaker Identity Memorization is the Dominant Hidden Factor in High Reported Accuracies\n"
         "   - Evaluating on unseen speakers causes a sharp 12% to 25% accuracy collapse across all corpora.\n"
