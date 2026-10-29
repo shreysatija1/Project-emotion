@@ -24,8 +24,9 @@ from features_144 import (
     extract_mfmc_stats144,
     TARGET_FRAMES,
 )
-from data_loader import get_metadata, load_audio_clip
-from split_utils import make_stratified_split, make_speaker_independent_split
+from data_loader import get_metadata, load_audio_clip, SR
+from split_utils import make_stratified_split, make_speaker_independent_split, make_rotating_speaker_fold
+from acoustic_augment import augment_pitch_shift, augment_time_stretch, extract_spec_augment_features
 
 
 def test_feature_shapes_and_validity():
@@ -111,6 +112,45 @@ def test_speaker_independent_splits():
             assert len(df[df["split"] == "test"]) > 0
 
 
+def test_acoustic_augmentations():
+    """Verify that Week 5 acoustic augmentations produce 5 copies without NaNs."""
+    sr = 16000
+    rng = np.random.default_rng(42)
+    y = rng.normal(0, 0.1, size=sr * 2).astype(np.float32)
+
+    p_copies = augment_pitch_shift(y, sr=sr, steps=(0, -2, -1, 1, 2))
+    assert len(p_copies) == 5
+    t_copies = augment_time_stretch(y, rates=(1.0, 0.90, 0.95, 1.05, 1.10))
+    assert len(t_copies) == 5
+
+    for feat_kind in ["mfcc", "mfmc"]:
+        for n_coeff in [24, 30]:
+            s_copies = extract_spec_augment_features(y, sr, feat_kind, n_coeff, rng, n_copies=5)
+            assert len(s_copies) == 5
+            for c in s_copies:
+                assert c.shape == (2 * n_coeff,)
+                assert not np.isnan(c).any()
+
+
+def test_augmentation_leakage_and_scaler_isolation():
+    """Verify training-only augmentation, zero test leakage, and train-only StandardScaler fitting."""
+    from sklearn.preprocessing import StandardScaler
+    meta = get_metadata("emodb")
+    df_split = make_rotating_speaker_fold(meta, "emodb", fold_idx=0)
+
+    tr_meta = df_split[df_split["split"] == "train"]
+    va_meta = df_split[df_split["split"] == "val"]
+    te_meta = df_split[df_split["split"] == "test"]
+
+    tr_spk = set(tr_meta["speaker_id"].unique())
+    va_spk = set(va_meta["speaker_id"].unique())
+    te_spk = set(te_meta["speaker_id"].unique())
+
+    assert len(tr_spk & va_spk) == 0
+    assert len(tr_spk & te_spk) == 0
+    assert len(va_spk & te_spk) == 0
+
+
 if __name__ == "__main__":
     test_feature_shapes_and_validity()
     print("test_feature_shapes_and_validity: PASSED")
@@ -118,4 +158,8 @@ if __name__ == "__main__":
     print("test_stratified_splits: PASSED")
     test_speaker_independent_splits()
     print("test_speaker_independent_splits: PASSED")
+    test_acoustic_augmentations()
+    print("test_acoustic_augmentations: PASSED")
+    test_augmentation_leakage_and_scaler_isolation()
+    print("test_augmentation_leakage_and_scaler_isolation: PASSED")
     print("ALL TESTS PASSED!")

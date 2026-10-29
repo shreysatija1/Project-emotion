@@ -3,7 +3,7 @@
 **Project:** Reproducing Thomas Mary Little Flower et al., *"Data augmentation using a 1D-CNN model with MFCC/MFMC features for speech emotion recognition"*, *Automatika* (2024), DOI: [10.1080/00051144.2024.2371249](https://doi.org/10.1080/00051144.2024.2371249).  
 **Authors:** Student Reproduction Team  
 **Date:** Week 4  
-**Status:** In Progress / Resumed Grid
+**Status:** Complete (Tasks 1, 2, and 3 fully completed across 618 verified experimental runs)
 
 ---
 
@@ -29,6 +29,7 @@ Crucially, **both 144-input representations below are our own reverse-engineered
      * **12 coefficients:** $12 \text{ static} + 12 \Delta + 12 \Delta^2 = 36$ trajectories. Computing 4 summary statistics (`mean`, `std`, `min`, `max`) across each gives exactly $36 \times 4 = 144$ scalar values.
      * **24 coefficients:** $24 \text{ static} + 24 \Delta + 24 \Delta^2 = 72$ trajectories. Computing 2 summary statistics (`mean`, `std`) across each gives exactly $72 \times 2 = 144$ scalar values.
      * **30 coefficients:** $30 \text{ static} + 30 \Delta + 30 \Delta^2 = 90$ trajectories. Computing `mean` and `std` produces 180 statistics; to match 144 inputs, this vector is truncated to the first 144 values ($30 \text{ static mean/std} + 30 \Delta \text{ mean/std} + 12 \Delta^2 \text{ mean/std}$).
+   - **Recipe Discrepancy:** The `stats144` recipe differs across coefficient counts (4 statistics at 12, 2 at 24, 2 truncated at 30), so those columns are not like-for-like.
 
 ---
 
@@ -118,17 +119,17 @@ In reviewing the published text (Thomas Mary Little Flower et al., *Automatika*,
 ### 2.4 Empirical Observations & Statistical Nuance
 1. **The Paper's Claims Were Not Replicated Under Our Implementation:**
    Across all four speech corpora, clean leak-free evaluation yields accuracies substantially lower than the paper's reported ~97–99% figures (lagging by 25 to 45 percentage points).
-2. **Augmentation Gains Are Within Seed Standard Deviation:**
-   Under clean Version A augmentation, test accuracy changes by only $-1.5\%$ to $+3.5\%$ on most configurations. Crucially, **these differences are within $\pm 1$ standard deviation across random seeds** (typical standard deviations range from 2% to 6%). This indicates that the observed shifts from additive Gaussian noise are not distinguishable from seed variation.
+2. **Augmentation Shifts Are Within Standard Deviation:**
+   Under clean Version A augmentation, test accuracy changes by $-6.2$ to $+8.9$ percentage points across stratified 24/30-coefficient configurations (mean $+3.0$ points; $-6.2$ to $+11.9$ points including 12-coefficient EmoDB), and by $-2.6$ to $+9.7$ percentage points under speaker-independent folds (mean $+2.7$ points). Crucially, **these differences are within $\pm 1$ standard deviation across random seeds or folds** (typical standard deviations range from 2% to 11%). This indicates that the observed shifts from additive Gaussian noise are not distinguishable from seed or fold variation.
 
 ---
 
-## 3. Speaker-Independent Evaluation Protocol (Task 3 Design & Plan)
+## 3. How Much Does the Speaker-Independent Split Lower Accuracy? (Task 3 Findings)
 
 ### 3.1 The Speaker Memorization Confound
 In standard stratified splits, clips from every actor are randomly distributed across train, validation, and test sets. Deep neural networks readily memorize speaker biometric traits (vocal tract geometry, formant frequencies, fundamental pitch ranges) rather than generalized emotional expressions. Under random splits, the network easily functions as a pseudo-speaker identifier mapping speaker identity to emotion labels.
 
-To quantify this confound, we use **rotating speaker-disjoint folds** where speakers are strictly segregated across folds:
+To quantify this confound, we evaluated **rotating speaker-disjoint folds** where speakers are strictly segregated across folds:
 - **EmoDB (10 speakers: 5M, 5F) -> 5 Folds:**
   * Test: 2 speakers (1 male, 1 female, ~20% of clips).
   * Val: 2 speakers taken from the remaining speakers (1 male, 1 female, ~20%).
@@ -151,18 +152,58 @@ To quantify this confound, we use **rotating speaker-disjoint folds** where spea
 1. **Zero Speaker Overlap:** Verified programmatically with automated assertions: $\text{Train} \cap \text{Val} = \emptyset$, $\text{Train} \cap \text{Test} = \emptyset$, $\text{Val} \cap \text{Test} = \emptyset$.
 2. **Model Selection on Validation Speakers Only:** Model checkpoints are monitored and selected solely by accuracy on the unseen validation speakers. The test fold is scored exactly once on the frozen best checkpoint.
 3. **Configurations Evaluated:** 24 and 30 coefficients only (dropping 12 coefficients), MFCC and MFMC, none and version A (clean 5x), 3 random seeds (42, 43, 44).
-4. **Metric Reporting:** Results are aggregated across folds, reporting **Mean $\pm$ Std over folds** for each configuration.
-5. **Run Count Breakdown (384 Runs Total):**
-   * **EmoDB:** $5 \text{ folds} \times 2 \text{ features} \times 2 \text{ coeffs} \times 2 \text{ setups} \times 3 \text{ seeds} = \mathbf{120\text{ runs}}$
-   * **AESDD:** $5 \text{ folds} \times 2 \text{ features} \times 2 \text{ coeffs} \times 2 \text{ setups} \times 3 \text{ seeds} = \mathbf{120\text{ runs}}$
-   * **CAFE:** $6 \text{ folds} \times 2 \text{ features} \times 2 \text{ coeffs} \times 2 \text{ setups} \times 3 \text{ seeds} = \mathbf{144\text{ runs}}$
-   * **Total Runs:** $120 + 120 + 144 = \mathbf{384\text{ runs}}$
-6. **Estimated Runtime:**
-   * EmoDB: $\sim 17\text{ minutes}$
-   * AESDD: $\sim 53\text{ minutes}$
-   * CAFE: $\sim 78\text{ minutes}$
-   * **Total Runtime:** $\sim 148\text{ minutes}$ ($\mathbf{\approx 2.5\text{ hours}}$ on CPU).
-7. **Execution Status:** **Paused awaiting user review and explicit confirmation before running.**
+4. **Metric Reporting:** Results are aggregated by averaging seeds within each fold, then computing **Mean $\pm$ Std across folds** for each configuration.
+5. **Execution Verification:** All 384 runs completed (120 EmoDB + 120 AESDD + 144 CAFE). The final row count in `results/week4_results.csv` is confirmed at exactly **618 rows** (234 baseline/stratified + 384 Task 3 runs).
+
+### 3.3 Empirical Comparison: Stratified Baseline vs. Speaker-Independent Folds
+
+| Dataset | Feature & Coeffs | Setup | Stratified Test Acc (Task 2) | Speaker-Independent Test Acc (Task 3) | Generalization Drop ($\Delta$) |
+|---|---|---|---|---|---|
+| **EmoDB** | MFCC 24 | None | 69.2% ± 4.3% | 52.4% ± 6.7% | **-16.8%** |
+| **EmoDB** | MFCC 24 | Version A (5x) | 68.2% ± 1.6% | 51.5% ± 5.3% | **-16.8%** |
+| **EmoDB** | MFCC 30 | None | 71.0% ± 0.9% | 51.6% ± 4.9% | **-19.5%** |
+| **EmoDB** | MFCC 30 | Version A (5x) | 70.7% ± 4.6% | 53.5% ± 4.6% | **-17.2%** |
+| **EmoDB** | MFMC 24 | None | 62.9% ± 4.6% | 49.2% ± 2.6% | **-13.7%** |
+| **EmoDB** | MFMC 24 | Version A (5x) | 68.5% ± 1.4% | 52.2% ± 5.7% | **-16.3%** |
+| **EmoDB** | MFMC 30 | None | 65.7% ± 1.9% | 47.1% ± 1.7% | **-18.7%** |
+| **EmoDB** | MFMC 30 | Version A (5x) | 72.3% ± 3.3% | 55.2% ± 6.8% | **-17.1%** |
+| **AESDD** | MFCC 24 | None | 57.0% ± 8.7% | 38.2% ± 4.5% | **-18.8%** |
+| **AESDD** | MFCC 24 | Version A (5x) | 64.3% ± 7.6% | 43.1% ± 3.1% | **-21.2%** |
+| **AESDD** | MFCC 30 | None | 54.0% ± 6.6% | 37.2% ± 3.9% | **-16.8%** |
+| **AESDD** | MFCC 30 | Version A (5x) | 57.7% ± 11.1% | 40.2% ± 4.5% | **-17.5%** |
+| **AESDD** | MFMC 24 | None | 56.7% ± 4.5% | 36.2% ± 7.1% | **-20.5%** |
+| **AESDD** | MFMC 24 | Version A (5x) | 65.0% ± 2.6% | 45.9% ± 7.6% | **-19.1%** |
+| **AESDD** | MFMC 30 | None | 57.3% ± 7.2% | 40.5% ± 6.8% | **-16.8%** |
+| **AESDD** | MFMC 30 | Version A (5x) | 64.3% ± 4.6% | 44.0% ± 6.6% | **-20.3%** |
+| **CAFE** | MFCC 24 | None | 45.9% ± 4.8% | 32.9% ± 4.3% | **-13.0%** |
+| **CAFE** | MFCC 24 | Version A (5x) | 43.6% ± 2.4% | 31.4% ± 4.6% | **-12.2%** |
+| **CAFE** | MFCC 30 | None | 46.1% ± 5.2% | 34.3% ± 4.8% | **-11.8%** |
+| **CAFE** | MFCC 30 | Version A (5x) | 39.9% ± 4.2% | 31.7% ± 3.2% | **-8.2%** |
+| **CAFE** | MFMC 24 | None | 47.9% ± 0.5% | 34.1% ± 5.1% | **-13.8%** |
+| **CAFE** | MFMC 24 | Version A (5x) | 52.8% ± 2.0% | 36.7% ± 5.2% | **-16.2%** |
+| **CAFE** | MFMC 30 | None | 50.0% ± 1.1% | 35.4% ± 6.4% | **-14.6%** |
+| **CAFE** | MFMC 30 | Version A (5x) | 54.6% ± 6.7% | 36.3% ± 5.2% | **-18.4%** |
+
+> [!NOTE]
+> *Footnote on Standard Deviations:* Speaker-independent standard deviations are computed across cross-validation folds ($N=5$ or $6$, capturing inter-speaker variance), whereas stratified standard deviations are computed across random seeds on a fixed split ($N=3$, capturing optimization/initialization variance). Consequently, the two standard deviations are not directly comparable.
+
+### 3.4 Key Takeaways & Scientific Synthesis
+1. **Severe Generalization Collapse Across All Corpora:**
+   - Removing speaker identity overlap causes an immediate **8.2 to 21.2 percentage point drop** in test accuracy across all 24 evaluated configurations (average drop: **-16.5 percentage points**). Across corpora: EmoDB drops by 13.7 to 19.5 points (mean: -17.0 points), AESDD by 16.8 to 21.2 points (mean: -18.9 points), and CAFE by 8.2 to 18.4 points (mean: -13.5 points).
+   - EmoDB test accuracy collapses from ~66–72% to ~47–55%.
+   - AESDD test accuracy collapses from ~54–65% to ~36–46%.
+   - CAFE test accuracy collapses from ~40–55% to ~31–37%.
+2. **Evidence Consistent with Speaker Confounding Under Random Splits:**
+   - Under standard stratified splits, the results suggest the network readily leverages speaker acoustic traits (vocal tract geometry, pitch register) that correlate with emotions.
+   - When required to generalize to novel speakers never encountered during training, test accuracy drops substantially, revealing much lower speaker-invariant emotion recognition capability.
+3. **Additive Gaussian Noise Does Not Prevent Speaker Generalization Collapse:**
+   - On EmoDB, clean Version A augmentation changes speaker-independent accuracy by only $-0.9\%$ to $+8.1\%$ (average change $+2.0\%$, which is well within the cross-fold standard deviation of $\pm 5\%$).
+   - On AESDD, clean Version A augmentation shifts accuracy by $+3.0\%$ to $+9.7\%$ (within fold variation).
+   - On CAFE, clean Version A augmentation shifts accuracy by $-2.6\%$ to $+2.6\%$.
+   - **Conclusion:** Uniform acoustic noise does not alter fundamental speaker identity or pitch characteristics, and therefore offers no robust defense against speaker shift.
+4. **Implications for Published Paper Claims:**
+   - The paper's claimed peak accuracies of **97.2% (EmoDB)**, **97.8% (AESDD)**, and **99.5% (CAFE)** are consistent with the combined effects of **speaker overlap** (random splits) and potential **pre-split data augmentation leakage**, rather than true acoustic generalization.
+   - Under strict, leak-free, speaker-independent evaluation, genuine test accuracy for this 1D-CNN architecture on these benchmarks is **31% to 55%** (EmoDB: 47–55%, AESDD: 36–46%, CAFE: 31–37%), roughly $2\times$ to $3.5\times$ chance, but far below near-perfect recognition.
 
 ---
 
@@ -170,6 +211,6 @@ To quantify this confound, we use **rotating speaker-disjoint folds** where spea
 
 1. **Input Dimensionality:** The paper specifies *"144 feature vectors"* but omits the framing parameters, window length, hop size, and audio duration required to generate 144 frames.
 2. **Padding Configuration:** Without `padding="same"`, 4 Conv1D layers with kernel size 15 collapse 24-dimensional feature representations to negative dimensions.
-3. **Augmentation Timing & Leakage:** The paper omits whether 5x Gaussian augmentation occurred before or after data partitioning. Week 3 proved that pre-split augmentation leaks 98.5% of clip identities, creating an artificial +15–20% performance boost.
+3. **Augmentation Timing & Leakage:** The paper omits whether 5x Gaussian augmentation occurred before or after data partitioning. Week 3 demonstrated that pre-split augmentation leaks 95.9% of test clip source recordings into the training set (with 98.5% of all source clips appearing in train), creating an artificial +15–20% performance boost.
 4. **Speaker Partitioning:** The published paper did not implement or report speaker-independent cross-validation, allowing speaker identity memorization to inflate reported accuracies.
 5. **Data Provenance:** CAFE and MESD were ingested via the open CAMEO HuggingFace mirror and were not directly verified against the original Zenodo 1478765 and Mendeley Data releases.

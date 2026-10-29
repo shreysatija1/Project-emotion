@@ -189,7 +189,7 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "  - EmoDB (535 clips, 7 emotions), 1D-CNN with 4 Conv blocks.\n"
         "  - Evaluated MFCC and MFMC at 12, 24, 30 coefficients (mean + std over time: 24, 48, 60 values).\n\n"
         "• The Leakage Discovery:\n"
-        "  - Augmenting before splitting (Version B) leaked 98.5% of source clips into training, yielding 80–89% accuracy.\n"
+        "  - Augmenting before splitting (Version B) leaked 95.9% of test clip source recordings into training (98.5% of all source clips present in train), yielding 80–89% accuracy.\n"
         "  - Clean augmentation after splitting (Version A) yielded 64–72% accuracy.\n\n"
         "• The Persistent Gap:\n"
         "  - Paper reports 86.9% without augmentation and 97.2% with augmentation.\n"
@@ -338,7 +338,8 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "  - Shape: 1D vector of shape (144, 1) combining static + delta + delta-delta.\n"
         "  - 12 coeffs: 36 trajectories x 4 stats (mean, std, min, max) = exactly 144 values.\n"
         "  - 24 coeffs: 72 trajectories x 2 stats (mean, std) = exactly 144 values.\n"
-        "  - 30 coeffs: 90 trajectories x 2 stats = 180 values, truncated to first 144 values."
+        "  - 30 coeffs: 90 trajectories x 2 stats = 180 values, truncated to first 144 values.\n"
+        "  - Note: Recipe differs across coefficient sizes (4 stats at 12, 2 at 24, truncated at 30), so columns are not like-for-like."
     )
     for p in tf4_2.paragraphs:
         p.font.size = Pt(10.5)
@@ -432,7 +433,7 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "• CAFE (Canadian French):\n"
         "  - 936 clips, 12 professional actors (6M/6F), 7 emotions.\n"
         "  - Sourced from open CAMEO HuggingFace mirror (not verified against Zenodo 1478765 release).\n\n"
-        "• AESDD (Att-HACK Greek):\n"
+        "• AESDD (Acted Emotional Speech Dynamic Database, Greek):\n"
         "  - 500 clips, 5 core actors (1–5), 20 sentences (01–20), 5 emotions.\n"
         "  - Rebuilt canonical subset asserting exactly 100 clips/emotion (4 takes from actor 6 to replace missing/corrupt takes).\n\n"
         "• MESD (Mexican Spanish):\n"
@@ -498,9 +499,10 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "  - CAFE (French, 7 cls): 46–50% (None) -> 40–55% (Ver A) [Paper: 93.6% / 99.5%]\n"
         "  - MESD (Spanish, 6 cls): 64–66% (None) -> 67–69% (Ver A) [Paper: 94.2% / 96.9%]\n\n"
         "• Key Findings on Augmentation & Replication:\n"
-        "  - Clean Version A augmentation shifts test accuracy by -7% to +11% across corpora.\n"
-        "  - Across datasets, most augmentation differences are not distinguishable from seed variation (seed std ranges from ±2% to ±11%).\n"
-        "  - The paper's claimed peak accuracies (~97–99%) were not replicated under our implementation across any of the four benchmarks."
+        "  - Clean Version A augmentation shifts test accuracy by -6.2 to +8.9 percentage points across 24/30-coeff stratified conditions (-6.2 to +11.9 pts including 12-coeff EmoDB).\n"
+        "  - Across datasets, augmentation differences remain within random seed standard deviation (±2% to ±11%), and are not distinguishable from seed variation.\n"
+        "  - The paper's claimed peak accuracies (~97–99%) were not replicated under our implementation across any of the four benchmarks.\n"
+        "  *Footnote: Stratified standard deviations are computed across random seeds (N=3).*"
     )
     for p in tf7_1.paragraphs:
         p.font.size = Pt(11)
@@ -597,65 +599,69 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
     )
 
     # =========================================================================
-    # SLIDE 9: Task 3 Protocol: Quantifying the Generalization Drop
+    # SLIDE 9: Task 3 Results: Speaker-Independent Generalization Collapse
     # =========================================================================
     s9 = prs.slides.add_slide(blank_layout)
     set_slide_background(s9)
-    add_header(s9, "Task 3: Speaker-Independent Experimental Design & Protocol")
+    add_header(s9, "Task 3 Results: Speaker-Independent Generalization Collapse")
 
-    # Left: Protocol & Design Card
-    add_card(s9, Inches(0.8), Inches(1.7), Inches(5.6), Inches(5.2), title="Protocol & Execution Parameters")
+    # Left: Findings & Methodology Card
+    add_card(s9, Inches(0.8), Inches(1.7), Inches(5.6), Inches(5.2), title="Speaker-Disjoint Generalization Findings")
     tb9_1 = s9.shapes.add_textbox(Inches(1.0), Inches(2.3), Inches(5.2), Inches(4.4))
     tf9_1 = tb9_1.text_frame
     tf9_1.word_wrap = True
     tf9_1.text = (
-        "• Strict Experimental Guardrails:\n"
-        "  - Rotating Folds: Speakers never shared between train, val, and test.\n"
-        "  - Model Selection: Best checkpoint selected SOLELY on validation speakers.\n"
-        "  - Single-Pass Test: Test fold evaluated once on frozen weights.\n"
-        "  - MESD Excluded: Demographic cohorts only, no individual speaker IDs.\n\n"
-        "• Experimental Matrix (384 Runs Total):\n"
-        "  - 3 Corpora: EmoDB (5 folds), CAFE (6 folds), AESDD (5 folds)\n"
-        "  - Coefficients: 24 and 30 only (dropped 12)\n"
-        "  - Features: MFCC & MFMC (2) | Setups: None & Ver A (2)\n"
-        "  - Seeds: 42, 43, 44 (3)\n"
-        "  - Formula: (5 + 6 + 5) folds x 2 feats x 2 coeffs x 2 setups x 3 seeds = 384 runs.\n\n"
-        "• Runtime Estimate & Metric Reporting:\n"
-        "  - EmoDB: ~17m | AESDD: ~53m | CAFE: ~78m -> Total: ~2.5 hours (~148m).\n"
-        "  - Reporting: Mean ± Std over folds for each configuration.\n"
-        "  - Status: Paused awaiting supervisor approval before running."
+        "• Strict Experimental Guardrails (384 Runs Total):\n"
+        "  - Rotating Folds: EmoDB (5 folds), AESDD (5 folds), CAFE (6 folds).\n"
+        "  - Zero Speaker Overlap: Speakers strictly segregated across Train, Val, and Test.\n"
+        "  - Model Selection: Best checkpoint selected SOLELY on unseen validation speakers.\n"
+        "  - Single-Pass Test: Test fold evaluated once on frozen weights.\n\n"
+        "• Observed Speaker Generalization Collapse (30 Coeffs):\n"
+        "  - EmoDB (German, 7 cls): Drops from 71.0% (stratified) to ~48-52% (speaker-disjoint).\n"
+        "  - AESDD (Greek, 5 cls): Drops from 54-57% (stratified) to ~35-42% (speaker-disjoint).\n"
+        "  - CAFE (French, 7 cls): Drops from 46-50% (stratified) to ~30-38% (speaker-disjoint).\n\n"
+        "• Key Methodological Findings:\n"
+        "  - Removing speaker identity overlap causes an immediate 8.2 to 21.2 percentage point drop across all 24 configurations (average drop: -16.5 points).\n"
+        "  - Gaussian noise augmentation provides negligible defense against speaker shift; shifts are within cross-fold variation.\n"
+        "  - Strongly suggests the 1D-CNN relies substantially on speaker acoustic characteristics under random splits.\n"
+        "  *Footnote: Speaker-independent std is across folds (N=5/6); stratified std is across seeds (N=3); not directly comparable.*"
     )
     for p in tf9_1.paragraphs:
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.color.rgb = TEXT_DARK
 
-    # Right: Hypotheses & Expected Drop Card
-    add_card(s9, Inches(6.8), Inches(1.7), Inches(5.7), Inches(5.2), title="Scientific Hypotheses to Test")
-    tb9_2 = s9.shapes.add_textbox(Inches(7.0), Inches(2.3), Inches(5.3), Inches(4.4))
-    tf9_2 = tb9_2.text_frame
-    tf9_2.word_wrap = True
-    tf9_2.text = (
-        "• Expected Generalization Drop:\n"
-        "  - Removing speaker identity overlap is expected to drop test accuracy by 15% to 25% across all corpora.\n"
-        "  - Tests whether the 1D-CNN is genuinely learning emotion representations or acting as a speaker biometric classifier.\n\n"
-        "• Does Gaussian Noise Protect Against Speaker Shift?\n"
-        "  - Hypothesis: Additive Gaussian noise corrupts acoustics uniformly but does not alter fundamental speaker identity (pitch range, vocal tract length).\n"
-        "  - Clean Version A augmentation is therefore expected to show minimal resilience against speaker shift.\n\n"
-        "• Methodological Implication for Paper:\n"
-        "  - The paper's ~97–99% figures rely on random splits (speaker overlap) combined with data leakage."
-    )
-    for p in tf9_2.paragraphs:
-        p.font.size = Pt(11)
-        p.font.color.rgb = TEXT_DARK
+    # Right: Comparison Plot or Details
+    img_task3 = RESULTS_DIR / "week4_plot_speaker_independent.png"
+    if img_task3.exists():
+        add_card(s9, Inches(6.8), Inches(1.7), Inches(5.7), Inches(5.2), title="Stratified vs. Speaker-Independent Comparison")
+        s9.shapes.add_picture(str(img_task3), Inches(7.0), Inches(2.3), width=Inches(5.3))
+    else:
+        add_card(s9, Inches(6.8), Inches(1.7), Inches(5.7), Inches(5.2), title="Scientific Hypotheses Tested")
+        tb9_2 = s9.shapes.add_textbox(Inches(7.0), Inches(2.3), Inches(5.3), Inches(4.4))
+        tf9_2 = tb9_2.text_frame
+        tf9_2.word_wrap = True
+        tf9_2.text = (
+            "• Expected Generalization Drop:\n"
+            "  - Removing speaker identity overlap is expected to drop test accuracy by 15% to 25% across all corpora.\n"
+            "  - Tests whether the 1D-CNN is genuinely learning emotion representations or acting as a speaker biometric classifier.\n\n"
+            "• Does Gaussian Noise Protect Against Speaker Shift?\n"
+            "  - Hypothesis: Additive Gaussian noise corrupts acoustics uniformly but does not alter fundamental speaker identity (pitch range, vocal tract length).\n"
+            "  - Clean Version A augmentation is therefore expected to show minimal resilience against speaker shift.\n\n"
+            "• Methodological Implication for Paper:\n"
+            "  - The paper's ~97–99% figures rely on random splits (speaker overlap) combined with data leakage."
+        )
+        for p in tf9_2.paragraphs:
+            p.font.size = Pt(11)
+            p.font.color.rgb = TEXT_DARK
 
     add_speaker_notes(
         s9,
         "Person 4 (Evaluation Lead)",
-        "On Slide 9, we outline the exact protocol for Task 3 before launching the runs. "
-        "We evaluate EmoDB, CAFE, and AESDD across 108 experimental configurations. "
-        "MESD is explicitly excluded because it only has demographic groups rather than individual speaker identities. "
-        "Models will be selected strictly on validation speakers, and test speakers will be evaluated once on the frozen best checkpoint. "
-        "The estimated runtime is approximately 14 to 16 minutes. We are paused here awaiting your confirmation before beginning execution."
+        "Slide 9 reveals our most critical evaluation finding: the dramatic collapse in performance when models are evaluated on unseen speakers. "
+        "Across all three corpora, enforcing strict speaker disjointness causes test accuracy to drop by 8.2 to 21.2 percentage points (average -16.5 points). "
+        "On EmoDB, accuracy drops from 71% to around 51%; on AESDD, from 57% to around 38%; and on CAFE, from 50% to around 35%. "
+        "Furthermore, clean Version A Gaussian noise augmentation provides negligible protection against this speaker shift. "
+        "This strongly suggests that in random stratified splits, the 1D-CNN relies substantially on speaker acoustic characteristics rather than learning pure emotion patterns."
     )
 
     # =========================================================================
@@ -676,14 +682,15 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "   - Test accuracy on frames144 drops to 51–61%, falling well below the pooled 24/48/60 baseline (64–71%).\n"
         "   - Summary statistics (mean + std) provide essential implicit regularization for small sample regimes.\n\n"
         "2. Additive Gaussian Noise Augmentation Does Not Reliably Boost Generalization\n"
-        "   - Across German (EmoDB), French (CAFE), Greek (AESDD), and Spanish (MESD), clean Version A augmentation shifts test accuracy by only -2% to +5%.\n"
-        "   - Most shifts fall within the random seed standard deviation (±2% to ±6%), and are not distinguishable from seed variation.\n"
+        "   - Across German (EmoDB), French (CAFE), Greek (AESDD), and Spanish (MESD), clean Version A augmentation shifts test accuracy by -6.2 to +8.9 percentage points (stratified) and -2.6 to +9.7 percentage points (speaker-independent).\n"
+        "   - Most shifts fall within the random seed or cross-fold standard deviation (±2% to ±11%), and are not distinguishable from noise.\n"
         "   - The paper's claimed peak accuracies (~97–99%) were not replicated under our implementation across any of the four benchmarks.\n\n"
-        "3. Speaker Identity Memorization is the Dominant Hidden Factor in High Reported Accuracies\n"
-        "   - Evaluating on unseen speakers causes a sharp 12% to 25% accuracy collapse across all corpora.\n"
-        "   - When combined with data leakage (augmenting before splitting, +15-20%), models easily reach artificial 90%+ scores without true emotion generalization.\n\n"
+        "3. Speaker Identity Confound Explains a Substantial Portion of the Performance Gap\n"
+        "   - Evaluating on unseen speakers causes an immediate 8.2 to 21.2 percentage point drop across all 24 configurations (average drop: -16.5 points).\n"
+        "   - Data is consistent with the hypothesis that published ~97-99% figures reflect speaker overlap and potential pre-split augmentation leakage rather than pure emotion recognition.\n\n"
         "4. University Reproduction Takeaway\n"
-        "   - Scientific honesty requires reporting genuine leak-free numbers: this 1D-CNN architecture achieves ~65-72% in speaker-dependent conditions, and ~48-55% in speaker-independent conditions."
+        "   - Scientific honesty requires reporting genuine leak-free numbers: this 1D-CNN architecture achieves ~63-72% on EmoDB (40-65% across other corpora) in stratified splits, and ~47-55% on EmoDB (~31-46% on AESDD and CAFE) in speaker-independent folds.\n"
+        "   *Footnote: Speaker-independent std is across folds; stratified std is across seeds; they are not directly comparable.*"
     )
     for p in tf10.paragraphs:
         p.font.size = Pt(11)
@@ -694,8 +701,8 @@ def create_deck(output_path=ROOT_DIR / "Week4_Status.pptx"):
         "Person 1 (Model Lead)",
         "To synthesize our findings: First, the 144-input format does not close the gap; in fact, temporal framing makes overfitting worse. "
         "Second, clean Gaussian noise augmentation provides minimal benefit across four different languages. "
-        "And third, speaker identity leakage explains why random splits report high numbers: when speakers are separated, accuracy drops by up to 25%. "
-        "Our reproduction study demonstrates that the published 97.2% figure relies on methodological flaws—specifically pre-split augmentation and speaker overlap."
+        "And third, speaker identity leakage explains why random splits report high numbers: when speakers are separated, accuracy drops by 8.2 to 21.2 percentage points (average -16.5 points). "
+        "Our reproduction study shows that the published figures are consistent with methodological artifacts—specifically pre-split augmentation and speaker overlap."
     )
 
     # =========================================================================
